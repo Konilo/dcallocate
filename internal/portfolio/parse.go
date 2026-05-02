@@ -70,8 +70,9 @@ func ParseReaderAt(r io.Reader, taxonomyName string, today time.Time) (*Node, er
 }
 
 func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error) {
-	if c.BaseCurrency != "" && c.BaseCurrency != "EUR" {
-		return nil, fmt.Errorf("unsupported base currency %q (only EUR is supported)", c.BaseCurrency)
+	baseCurrency := c.BaseCurrency
+	if baseCurrency == "" {
+		return nil, fmt.Errorf("portfolio file is missing <baseCurrency>")
 	}
 
 	// Index securities and accounts by their id-attribute.
@@ -113,9 +114,9 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 		if ptx.Security == nil || ptx.Security.Reference == "" {
 			return nil, fmt.Errorf("portfolio-transaction id=%s has no security reference", ptx.ID)
 		}
-		if ptx.CurrencyCode != "" && ptx.CurrencyCode != "EUR" {
-			return nil, fmt.Errorf("portfolio-transaction id=%s has currency %q, only EUR supported (FX out of scope)",
-				ptx.ID, ptx.CurrencyCode)
+		if ptx.CurrencyCode != "" && ptx.CurrencyCode != baseCurrency {
+			return nil, fmt.Errorf("portfolio-transaction id=%s is in %s, not the portfolio base currency %s (FX out of scope)",
+				ptx.ID, ptx.CurrencyCode, baseCurrency)
 		}
 		sharesBySec[ptx.Security.Reference] += float64(sign) * float64(ptx.Shares) / sharesScale
 	}
@@ -123,9 +124,9 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 	// Compute current EUR value per security.
 	valBySec := map[string]float64{}
 	for id, s := range secByID {
-		if s.CurrencyCode != "" && s.CurrencyCode != "EUR" {
-			return nil, fmt.Errorf("security id=%s (%s) is in %s, not EUR (FX out of scope)",
-				id, s.Name, s.CurrencyCode)
+		if s.CurrencyCode != "" && s.CurrencyCode != baseCurrency {
+			return nil, fmt.Errorf("security id=%s (%s) is in %s, not the portfolio base currency %s (FX out of scope)",
+				id, s.Name, s.CurrencyCode, baseCurrency)
 		}
 		held := sharesBySec[id]
 		if held == 0 {
@@ -147,9 +148,9 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 	// transaction list, resolving references against acctTxByID.
 	cashByAcct := map[string]float64{}
 	for id, a := range acctByID {
-		if a.CurrencyCode != "" && a.CurrencyCode != "EUR" {
-			return nil, fmt.Errorf("account id=%s (%s) is in %s, not EUR (FX out of scope)",
-				id, a.Name, a.CurrencyCode)
+		if a.CurrencyCode != "" && a.CurrencyCode != baseCurrency {
+			return nil, fmt.Errorf("account id=%s (%s) is in %s, not the portfolio base currency %s (FX out of scope)",
+				id, a.Name, a.CurrencyCode, baseCurrency)
 		}
 		var bal float64
 		for j := range a.Transactions.Items {
@@ -190,6 +191,7 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 
 	// Build the rendered tree.
 	root := buildNode(&tax.Root, 1.0, valBySec, cashByAcct, secByID, acctByID)
+	root.BaseCurrency = baseCurrency
 
 	// Sanity-check: leaf targets sum to 1.0 (within tolerance).
 	var sumTargets float64

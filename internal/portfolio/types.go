@@ -12,6 +12,12 @@ type Node struct {
 	// Name is the classification's display name.
 	Name string `json:"name"`
 
+	// BaseCurrency is the portfolio's base ISO 4217 code (e.g. "EUR", "USD").
+	// Set only on the root node; empty on children. Read by renderers to label
+	// money columns. Tracked here rather than on a wrapper struct to keep the
+	// Parse signature unchanged.
+	BaseCurrency string `json:"baseCurrency,omitempty"`
+
 	// Children is the ordered list of child classifications (empty on leaves).
 	Children []*Node `json:"children,omitempty"`
 

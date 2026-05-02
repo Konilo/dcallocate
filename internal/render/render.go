@@ -22,12 +22,14 @@ const (
 
 // Tree writes a human-readable tree of the portfolio + computed allocations
 // to w. If color is true, ANSI escape codes are emitted (stuck rows dimmed,
-// header bold).
+// header bold). Money columns are labelled with the portfolio's base
+// currency, read from root.BaseCurrency.
 func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 	rootCurrent := root.Current
+	ccy := root.BaseCurrency
 
 	// Header. Body line column widths are: name (nameColWidth) + 2sp + 14
-	// (10.2f " EUR") + 2sp + 8 (6.2f " %") + 2sp + 8 + 2sp + 14 invest.
+	// (10.2f " <ccy>") + 2sp + 8 (6.2f " %") + 2sp + 8 + 2sp + 14 invest.
 	header := fmt.Sprintf("%s  %14s  %8s  %8s  %14s",
 		padRunes("asset", nameColWidth),
 		"current",
@@ -60,13 +62,14 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 			nowPct = n.Current / rootCurrent * 100
 		}
 
-		investStr := fmt.Sprintf("%+10.2f EUR", n.Investment)
+		investStr := fmt.Sprintf("%+10.2f %s", n.Investment, ccy)
 		if n.Stuck {
 			investStr = fmt.Sprintf("%14s", "—")
 		}
-		line := fmt.Sprintf("%s  %10.2f EUR  %6.2f %%  %6.2f %%  %s",
+		line := fmt.Sprintf("%s  %10.2f %s  %6.2f %%  %6.2f %%  %s",
 			padRunes(truncRunes(nameCell, nameColWidth), nameColWidth),
 			n.Current,
+			ccy,
 			nowPct,
 			n.Target*100,
 			investStr,
@@ -104,9 +107,10 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 				conn = "└── "
 			}
 			label := fmt.Sprintf("%s%s%s", childPrefix, conn, a.Name)
-			asgLine := fmt.Sprintf("%s  %10.2f EUR",
+			asgLine := fmt.Sprintf("%s  %10.2f %s",
 				padRunes(truncRunes(label, nameColWidth), nameColWidth),
 				a.Current,
+				ccy,
 			)
 			if color {
 				fmt.Fprintln(w, ansiDim+asgLine+ansiReset)
@@ -118,8 +122,8 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 	walk(root, "", true, 0)
 
 	fmt.Fprintln(w, strings.Repeat("─", utf8.RuneCountInString(header)))
-	footer := fmt.Sprintf("Total contributed: %+.2f EUR  (post-contribution portfolio: %.2f EUR)",
-		amount, rootCurrent+amount)
+	footer := fmt.Sprintf("Total contributed: %+.2f %s  (post-contribution portfolio: %.2f %s)",
+		amount, ccy, rootCurrent+amount, ccy)
 	if color {
 		fmt.Fprintln(w, ansiBold+footer+ansiReset)
 	} else {

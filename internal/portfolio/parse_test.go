@@ -133,6 +133,24 @@ func TestParse_TaxonomyNotFound(t *testing.T) {
 	}
 }
 
+func TestParse_NonEURBaseCurrency(t *testing.T) {
+	// Swap every "EUR" → "USD" throughout the fixture: the whole portfolio is
+	// then USD-based and should parse cleanly with BaseCurrency = "USD".
+	xmlText := strings.ReplaceAll(readFile(t, "../../testdata/portfolio_min.xml"), "EUR", "USD")
+	today, _ := time.Parse("2006-01-02", fixtureToday)
+	tree, err := ParseReaderAt(strings.NewReader(xmlText), "Asset Classes", today)
+	if err != nil {
+		t.Fatalf("USD-base portfolio failed to parse: %v", err)
+	}
+	if tree.BaseCurrency != "USD" {
+		t.Errorf("BaseCurrency = %q, want USD", tree.BaseCurrency)
+	}
+	// Same numeric structure as the EUR fixture.
+	if !almostEqual(tree.Current, 1000.0, 1e-6) {
+		t.Errorf("USD root current = %g, want 1000", tree.Current)
+	}
+}
+
 func TestParse_NonEURSecurity(t *testing.T) {
 	xmlText := strings.Replace(
 		readFile(t, "../../testdata/portfolio_min.xml"),

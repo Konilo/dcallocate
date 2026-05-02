@@ -20,7 +20,10 @@ import (
 const usageTmpl = `dcallocate — PortfolioPerformance rebalance-by-investing helper.
 
 Usage:
-  dcallocate [flags] <AMOUNT_EUR>
+  dcallocate [flags] <AMOUNT>
+
+  AMOUNT is in the portfolio's base currency (whatever PP's <baseCurrency> says
+  — typically EUR, USD, GBP, ...). Mixed-currency portfolios are not supported.
 
 Examples:
   dcallocate 500                                          # uses saved config
@@ -42,7 +45,7 @@ func run(args []string) int {
 	var (
 		xmlPath   = fs.String("xml", "", "path to the PortfolioPerformance XML file")
 		taxName   = fs.String("taxonomy", "", "taxonomy name to rebalance against (e.g. \"Asset Classes\")")
-		amountF   = fs.Float64("amount", 0, "amount to contribute, in EUR")
+		amountF   = fs.Float64("amount", 0, "amount to contribute, in the portfolio's base currency")
 		asJSON    = fs.Bool("json", false, "emit JSON instead of the pretty tree")
 		saveCfg   = fs.Bool("save-config", false, "save --xml and --taxonomy to the user config")
 		colorMode = fs.String("color", "auto", "when to emit ANSI colors: auto (default; honors NO_COLOR and TTY), always, or never")

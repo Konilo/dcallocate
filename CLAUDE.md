@@ -49,8 +49,8 @@ GitHub Actions workflow does the same on `v*` tag push.
   fields. Don't make the allocator import `portfolio` or operate on Trees —
   the boundary keeps it trivially unit-testable.
 - **Fail loud, never silently miscount.** Unknown PP transaction types,
-  non-EUR securities, dangling references, weight sums far from 1 — all
-  return errors with specific context. No best-effort fallbacks.
+  off-base-currency securities, dangling references, weight sums far from 1 —
+  all return errors with specific context. No best-effort fallbacks.
 
 ## XML quirks (PortfolioPerformance / XStream serialization)
 
@@ -85,7 +85,9 @@ GitHub Actions workflow does the same on `v*` tag push.
 
 ## Out of scope (don't add unprompted)
 
-- **FX / multi-currency.** Non-EUR securities or accounts → fail loud. Adding
-  FX would multiply the surface area for marginal benefit.
+- **Mixed-currency portfolios / FX.** Single non-EUR base currency works
+  (PP's `<baseCurrency>` is honoured throughout). But a security or account
+  in a *different* currency than the portfolio base → fail loud. Adding FX
+  conversion would multiply the surface area for marginal benefit.
 - **Per-assignment target splitting.** See invariants above.
 - **GUI, web UI, scheduled runs.** It's a CLI run once a month.
