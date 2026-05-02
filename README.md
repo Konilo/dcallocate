@@ -94,30 +94,33 @@ The persisted config (XML path + taxonomy name) lives at:
 
 ## How it works
 
-```
-PortfolioPerformance XML
-        │
-        ▼
-parse  ─── <securities>   → per-security: currency, prices, share-changing transactions
-       ─── <accounts>     → per-account: currency, cash-changing transactions
-       ─── <taxonomies>   → classification tree with target weights (basis-points-of-parent)
-       ─── <baseCurrency> → portfolio's reporting currency (EUR, USD, GBP, ...)
-        │
-        ▼
-tree of classifications, each leaf carrying { Current (in base currency), Target (fraction) }
-        │
-        ▼
-water-filling allocator (or closed-form rebalance for --allow-selling)
-        │
-        ▼
-write Investment + Stuck onto each leaf
-        │
-        ▼
-roll up:  inner nodes sum children's Current and Investment;
-          inner-node Stuck = AND of descendants' Stuck
-        │
-        ▼
-render: Unicode tree to terminal, or JSON with --json
+```mermaid
+sequenceDiagram
+    actor User
+    participant main as cmd/dcallocate/main.go
+    participant config as internal/config
+    participant portfolio as internal/portfolio
+    participant allocator as internal/allocator
+    participant render as internal/render
+
+    User->>main: dcallocate [flags] &lt;amount&gt;
+    main->>config: Load() — saved xml path + taxonomy name
+    config-->>main: config (empty on first run)
+    opt --save-config
+        main->>config: Save()
+    end
+    main->>portfolio: Parse(xml, taxonomy) — read PP XML, build classification tree
+    portfolio-->>main: tree (leaves carry Current, Target)
+    main->>allocator: Allocate(leaves, amount)<br/>or AllocateWithSelling
+    allocator-->>main: per-leaf Investment + Stuck
+    main->>portfolio: tree.Rollup() — sum into inner nodes, AND Stuck
+    portfolio-->>main: tree fully annotated
+    alt --json
+        main->>render: JSON(tree, amount)
+    else default
+        main->>render: Tree(tree, amount, color)
+    end
+    render-->>User: stdout (pretty tree or JSON)
 ```
 
 Allocation is done at the **leaf-classification level**, not per-security. Within a leaf classification with multiple assignments (e.g. one classification pointing at two ETFs), the tool prints both for context but does *not* split the target among them — you decide which security to actually buy.
@@ -199,7 +202,3 @@ make release    # cross-compile all 5 targets into ./dist/
 CI runs on every push to `main` and every PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml)). A separate workflow ([.github/workflows/release.yml](.github/workflows/release.yml)) cross-compiles binaries and publishes a GitHub Release on every `v*` tag push.
 
 The runtime is the bare native binary; the devcontainer is dev-time only.
-
-## License
-
-[MIT](LICENSE) © 2026 Konilo Zio.
