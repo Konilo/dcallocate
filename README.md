@@ -6,7 +6,7 @@ The technique has a couple of names: **rebalance by investing** (the descriptive
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
 
-**Single static binary, zero third-party Go dependencies, no runtime dependencies.**
+**Zero third-party dependencies, distributed as a single static binary.**
 
 ## Install
 
@@ -128,30 +128,23 @@ Allocation is done at the **leaf-classification level**, not per-security. Withi
 ## The math
 
 Inputs:
-- `c_i` = current value of leaf classification *i* (in base currency)
-- `t_i` = target weight of leaf *i* (fractions sum to 1)
-- `C` = contribution amount (≥ 0)
+- $c_i$ — current value of leaf classification $i$ (in base currency)
+- $t_i$ — target weight of leaf $i$ (fractions sum to 1)
+- $C$ — contribution amount, $C \ge 0$
 
 ### Default mode (no selling, water-filling)
 
-```
-V = Σ c_i + C
-loop:
-  for each non-stuck i:
-    x_i = (t_i / Σ_active t) · (V − Σ_stuck c) − c_i
-  if any x_i < 0: stick those (x_i := 0), repeat
-  else: done
-```
+Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass, for every classification $i$ not yet stuck, compute its share of the still-unallocated money:
 
-Termination guaranteed in at most *N* passes (one classification gets stuck per pass, or we exit).
+$$x_i = \frac{t_i}{\sum_{j \in \text{active}} t_j} \cdot \left(V - \sum_{j \in \text{stuck}} c_j\right) - c_i$$
+
+If any $x_i < 0$, mark those classifications stuck (force $x_i := 0$) and repeat. Termination guaranteed in at most $N$ passes — one classification gets stuck per pass, or the loop exits.
 
 ### `--allow-selling` mode (closed-form)
 
-```
-x_i = t_i · (Σ c + C) − c_i      ∀ i
-```
+$$x_i = t_i \cdot \left(\sum_j c_j + C\right) - c_i \qquad \forall\, i$$
 
-Per-asset deltas may be negative. Σ x_i = C. Every classification lands exactly on its target weight in one pass.
+Per-asset deltas may be negative. $\sum_i x_i = C$. Every classification lands exactly on its target weight in one pass.
 
 For the full derivation, correctness proof, and an R reference implementation, see [Konilo/sandbox: portfolio_contribution_complexities.pdf](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf).
 
