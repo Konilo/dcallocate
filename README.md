@@ -103,7 +103,7 @@ sequenceDiagram
     participant allocator as internal/allocator
     participant render as internal/render
 
-    User->>main: dcallocate [flags] &lt;amount&gt;
+    User->>main: dcallocate [flags] AMOUNT
     main->>config: Load() — saved xml path + taxonomy name
     config-->>main: config (empty on first run)
     opt --save-config
