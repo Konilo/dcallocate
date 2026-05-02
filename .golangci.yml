@@ -1,0 +1,13 @@
+version: "2"
+
+linters:
+  default: standard
+  settings:
+    errcheck:
+      exclude-functions:
+        # CLI output to io.Writer (typically Stdout/Stderr): errors are not actionable.
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        # Closing a file we opened for read: errors are not actionable.
+        - (*os.File).Close
