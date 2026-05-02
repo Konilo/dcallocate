@@ -136,7 +136,7 @@ Inputs:
 
 Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass, for every classification $i$ not yet stuck, compute its share of the still-unallocated money:
 
-$$x_i = \frac{t_i}{\sum_{j \in \text{active}} t_j} \cdot \left(V - \sum_{j \in \text{stuck}} c_j\right) - c_i$$
+$$x_i = \frac{t_i}{\sum_{j \in \text{non-stuck}} t_j} \cdot \left(V - \sum_{j \in \text{stuck}} c_j\right) - c_i$$
 
 If any $x_i < 0$, mark those classifications stuck (force $x_i := 0$) and repeat. Termination guaranteed in at most $N$ passes — one classification gets stuck per pass, or the loop exits.
 
