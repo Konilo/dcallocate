@@ -39,8 +39,8 @@ GitHub Actions workflow does the same on `v*` tag push.
 - **Allocation granularity is the leaf classification, not the assignment.**
   When a leaf classification has multiple assignments (e.g. one classification
   pointing at two ETFs), the classification's target is *not* split among
-  them. Assignments are displayed for context only. The user has explicitly
-  rejected automatic splitting — they choose which security to actually buy.
+  them. Assignments are displayed for context only. By design, automatic
+  splitting is not done — the operator chooses which security to actually buy.
 - **Default never sells.** `x_i ≥ 0` is a hard constraint of the water-filling
   algorithm in `allocator.Allocate`. The opt-in `--allow-selling` flag uses
   `allocator.AllocateWithSelling`, a closed-form rebalance that permits negative
@@ -72,11 +72,11 @@ GitHub Actions workflow does the same on `v*` tag push.
 
 ## Known quirks
 
-- **~0.02 % EUR discrepancy vs PP's UI.** PP prefers the `<latest>` element
-  (sometimes intraday) over the last `<prices>/<price>` entry; we use the
-  latter. *Now %* and *Target %* match PP exactly; only absolute EUR drifts
-  marginally. This is intentional and documented — don't "fix" it without
-  asking the user.
+- **~0.02 % money-column discrepancy vs PP's UI.** PP prefers the `<latest>`
+  element (sometimes intraday) over the last `<prices>/<price>` entry; we use
+  the latter. *Now %* and *Target %* match PP exactly; only the absolute
+  amounts drift marginally. This is intentional and documented — don't "fix"
+  it without asking the user.
 - **Devcontainer apt-get fix.** The Microsoft Go base image ships a Yarn
   apt source whose GPG key has rotated. `.devcontainer/Dockerfile` deletes
   `/etc/apt/sources.list.d/yarn.list` before `apt-get update`. If a future

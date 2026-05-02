@@ -1,6 +1,7 @@
 // Command dcallocate reads a PortfolioPerformance XML file, takes an amount of
 // new money to contribute, and prints how to split it across the assets so the
-// portfolio converges toward its target allocation, never selling.
+// portfolio converges toward its target allocation. By default never sells;
+// pass --allow-selling for closed-form rebalancing that may include sells.
 package main
 
 import (

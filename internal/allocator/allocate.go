@@ -49,7 +49,8 @@ type Allocation struct {
 }
 
 // Allocate computes how to split `amount` across `assets` so that the resulting
-// weights converge toward the targets, never selling any asset.
+// weights converge toward the targets, never selling any asset (water-filling
+// with x_i >= 0). For the selling-allowed variant, see AllocateWithSelling.
 //
 // The function is pure: no I/O, no globals.
 func Allocate(assets []Asset, amount float64) ([]Allocation, error) {

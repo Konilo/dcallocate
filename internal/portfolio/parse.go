@@ -121,7 +121,7 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 		sharesBySec[ptx.Security.Reference] += float64(sign) * float64(ptx.Shares) / sharesScale
 	}
 
-	// Compute current EUR value per security.
+	// Compute current value per security (in the portfolio's base currency).
 	valBySec := map[string]float64{}
 	for id, s := range secByID {
 		if s.CurrencyCode != "" && s.CurrencyCode != baseCurrency {
@@ -279,8 +279,9 @@ func buildNode(c *classificationXML, parentTarget float64,
 	return n
 }
 
-// latestPrice returns (price-per-unit-in-EUR, date) for the most recent <price t v/>
-// with t <= today.
+// latestPrice returns (price-per-unit, date) for the most recent <price t v/>
+// with t <= today. Price is in the security's currency, which the caller has
+// already verified equals the portfolio base currency.
 func latestPrice(s *securityXML, today time.Time) (float64, time.Time, error) {
 	if len(s.Prices.Items) == 0 {
 		return 0, time.Time{}, errors.New("no prices")

@@ -21,8 +21,9 @@ type Node struct {
 	// Children is the ordered list of child classifications (empty on leaves).
 	Children []*Node `json:"children,omitempty"`
 
-	// Current is the EUR value of this classification right now (sum of the
+	// Current is the present value of this classification (sum of the
 	// underlying assignments for leaves; sum of children for inner nodes).
+	// Always in the portfolio's base currency.
 	Current float64 `json:"current"`
 
 	// Target is the absolute target weight of this classification (between 0
@@ -30,8 +31,9 @@ type Node struct {
 	// per-assignment splitting. Sum of leaf-classification targets = 1.
 	Target float64 `json:"target"`
 
-	// Investment is the EUR amount the caller should invest in this
-	// classification. For inner nodes, equals the sum of Investment of children.
+	// Investment is the amount the caller should invest in this classification
+	// (in the base currency). For inner nodes, equals the sum of Investment of
+	// children.
 	Investment float64 `json:"investment"`
 
 	// Stuck marks leaves whose target share is already covered (allocator
