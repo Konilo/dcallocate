@@ -1,4 +1,4 @@
-# dcallocate
+# :curly_loop: dcallocate
 
 A tiny CLI that reads a [PortfolioPerformance](https://www.portfolio-performance.info/) XML export, takes an amount of new money to **contribute**, and prints how to split it across your assets so the portfolio drifts toward its target allocation — **never selling, only buying** by default (`--allow-selling` opts into a closed-form rebalance that may include sells).
 
@@ -6,7 +6,7 @@ The technique has a couple of names: **rebalance by investing** (the descriptive
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
 
-**Single static binary, zero third-party Go dependencies, no runtime dependencies.**
+**Zero third-party dependencies, distributed as a single static binary.**
 
 ## Install
 
@@ -94,30 +94,33 @@ The persisted config (XML path + taxonomy name) lives at:
 
 ## How it works
 
-```
-PortfolioPerformance XML
-        │
-        ▼
-parse  ─── <securities>   → per-security: currency, prices, share-changing transactions
-       ─── <accounts>     → per-account: currency, cash-changing transactions
-       ─── <taxonomies>   → classification tree with target weights (basis-points-of-parent)
-       ─── <baseCurrency> → portfolio's reporting currency (EUR, USD, GBP, ...)
-        │
-        ▼
-tree of classifications, each leaf carrying { Current (in base currency), Target (fraction) }
-        │
-        ▼
-water-filling allocator (or closed-form rebalance for --allow-selling)
-        │
-        ▼
-write Investment + Stuck onto each leaf
-        │
-        ▼
-roll up:  inner nodes sum children's Current and Investment;
-          inner-node Stuck = AND of descendants' Stuck
-        │
-        ▼
-render: Unicode tree to terminal, or JSON with --json
+```mermaid
+sequenceDiagram
+    actor User
+    participant main as cmd/dcallocate/main.go
+    participant config as internal/config
+    participant portfolio as internal/portfolio
+    participant allocator as internal/allocator
+    participant render as internal/render
+
+    User->>main: dcallocate [flags] AMOUNT
+    main->>config: Load() — saved xml path + taxonomy name
+    config-->>main: config (empty on first run)
+    opt --save-config
+        main->>config: Save()
+    end
+    main->>portfolio: Parse(xml, taxonomy) — read PP XML, build classification tree
+    portfolio-->>main: tree (leaves carry Current, Target)
+    main->>allocator: Allocate(leaves, amount)<br/>or AllocateWithSelling
+    allocator-->>main: per-leaf Investment + Stuck
+    main->>portfolio: tree.Rollup() — sum into inner nodes, AND Stuck
+    portfolio-->>main: tree fully annotated
+    alt --json
+        main->>render: JSON(tree, amount)
+    else default
+        main->>render: Tree(tree, amount, color)
+    end
+    render-->>User: stdout (pretty tree or JSON)
 ```
 
 Allocation is done at the **leaf-classification level**, not per-security. Within a leaf classification with multiple assignments (e.g. one classification pointing at two ETFs), the tool prints both for context but does *not* split the target among them — you decide which security to actually buy.
@@ -125,30 +128,23 @@ Allocation is done at the **leaf-classification level**, not per-security. Withi
 ## The math
 
 Inputs:
-- `c_i` = current value of leaf classification *i* (in base currency)
-- `t_i` = target weight of leaf *i* (fractions sum to 1)
-- `C` = contribution amount (≥ 0)
+- $c_i$ — current value of leaf classification $i$ (in base currency)
+- $t_i$ — target weight of leaf $i$ (fractions sum to 1)
+- $C$ — contribution amount, $C \ge 0$
 
 ### Default mode (no selling, water-filling)
 
-```
-V = Σ c_i + C
-loop:
-  for each non-stuck i:
-    x_i = (t_i / Σ_active t) · (V − Σ_stuck c) − c_i
-  if any x_i < 0: stick those (x_i := 0), repeat
-  else: done
-```
+Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass, for every classification $i$ not yet stuck, compute its share of the still-unallocated money:
 
-Termination guaranteed in at most *N* passes (one classification gets stuck per pass, or we exit).
+$$x_i = \frac{t_i}{\sum_{j \in \text{non-stuck}} t_j} \cdot \left(V - \sum_{j \in \text{stuck}} c_j\right) - c_i$$
+
+If any $x_i < 0$, mark those classifications stuck (force $x_i := 0$) and repeat. Termination guaranteed in at most $N$ passes — one classification gets stuck per pass, or the loop exits.
 
 ### `--allow-selling` mode (closed-form)
 
-```
-x_i = t_i · (Σ c + C) − c_i      ∀ i
-```
+$$x_i = t_i \cdot \left(\sum_j c_j + C\right) - c_i \qquad \forall\, i$$
 
-Per-asset deltas may be negative. Σ x_i = C. Every classification lands exactly on its target weight in one pass.
+Per-asset deltas may be negative. $\sum_i x_i = C$. Every classification lands exactly on its target weight in one pass.
 
 For the full derivation, correctness proof, and an R reference implementation, see [Konilo/sandbox: portfolio_contribution_complexities.pdf](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf).
 
@@ -199,7 +195,3 @@ make release    # cross-compile all 5 targets into ./dist/
 CI runs on every push to `main` and every PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml)). A separate workflow ([.github/workflows/release.yml](.github/workflows/release.yml)) cross-compiles binaries and publishes a GitHub Release on every `v*` tag push.
 
 The runtime is the bare native binary; the devcontainer is dev-time only.
-
-## License
-
-[MIT](LICENSE) © 2026 Konilo Zio.
