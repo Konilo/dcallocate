@@ -1,0 +1,21 @@
+/bin/
+/dist/
+*.exe
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Test artefacts
+*.test
+coverage.out
+
+# Claude Code workspace settings (per-machine)
+/.claude/
+
+draft/

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<client id="1">
+  <version>69</version>
+  <baseCurrency>EUR</baseCurrency>
+  <securities>
+    <security id="1">
+      <uuid>aaaaaaaa-0000-0000-0000-000000000001</uuid>
+      <name>SecA</name>
+      <currencyCode>EUR</currencyCode>
+      <prices>
+        <price t="2026-04-29" v="1000000000"/>
+        <price t="2026-04-30" v="1100000000"/>
+      </prices>
+    </security>
+    <security id="2">
+      <uuid>aaaaaaaa-0000-0000-0000-000000000002</uuid>
+      <name>SecB</name>
+      <currencyCode>EUR</currencyCode>
+      <prices>
+        <price t="2026-04-30" v="500000000"/>
+      </prices>
+    </security>
+  </securities>
+  <accounts>
+    <account id="3">
+      <uuid>bbbbbbbb-0000-0000-0000-000000000003</uuid>
+      <name>Cash1</name>
+      <currencyCode>EUR</currencyCode>
+      <transactions>
+        <account-transaction id="10">
+          <uuid>cccccccc-0000-0000-0000-000000000010</uuid>
+          <date>2026-04-01T00:00</date>
+          <currencyCode>EUR</currencyCode>
+          <amount>100000</amount>
+          <shares>0</shares>
+          <type>DEPOSIT</type>
+        </account-transaction>
+        <account-transaction id="11">
+          <uuid>cccccccc-0000-0000-0000-000000000011</uuid>
+          <date>2026-04-15T00:00</date>
+          <currencyCode>EUR</currencyCode>
+          <amount>5500</amount>
+          <security reference="1"/>
+          <crossEntry class="buysell" id="12">
+            <portfolio id="13">
+              <uuid>dddddddd-0000-0000-0000-000000000013</uuid>
+              <name>Pf1</name>
+              <referenceAccount reference="3"/>
+              <transactions>
+                <portfolio-transaction id="14">
+                  <uuid>eeeeeeee-0000-0000-0000-000000000014</uuid>
+                  <date>2026-04-15T00:00</date>
+                  <currencyCode>EUR</currencyCode>
+                  <amount>5500</amount>
+                  <security reference="1"/>
+                  <crossEntry class="buysell" reference="12"/>
+                  <shares>500000000</shares>
+                  <type>BUY</type>
+                </portfolio-transaction>
+                <portfolio-transaction id="15">
+                  <uuid>eeeeeeee-0000-0000-0000-000000000015</uuid>
+                  <date>2026-04-20T00:00</date>
+                  <currencyCode>EUR</currencyCode>
+                  <amount>5000</amount>
+                  <security reference="2"/>
+                  <crossEntry class="buysell" id="17">
+                    <portfolio reference="13"/>
+                    <portfolioTransaction reference="15"/>
+                    <account reference="3"/>
+                    <accountTransaction id="18">
+                      <uuid>cccccccc-0000-0000-0000-000000000018</uuid>
+                      <date>2026-04-20T00:00</date>
+                      <currencyCode>EUR</currencyCode>
+                      <amount>5000</amount>
+                      <security reference="2"/>
+                      <crossEntry class="buysell" reference="17"/>
+                      <shares>0</shares>
+                      <type>BUY</type>
+                    </accountTransaction>
+                  </crossEntry>
+                  <shares>1000000000</shares>
+                  <type>BUY</type>
+                </portfolio-transaction>
+              </transactions>
+            </portfolio>
+          </crossEntry>
+          <shares>0</shares>
+          <type>BUY</type>
+        </account-transaction>
+        <account-transaction reference="18"/>
+      </transactions>
+    </account>
+  </accounts>
+  <portfolios>
+    <portfolio reference="13"/>
+  </portfolios>
+  <taxonomies>
+    <taxonomy>
+      <id>tax-min-1</id>
+      <name>Asset Classes</name>
+      <root id="100">
+        <id>root-100</id>
+        <name>Asset Classes</name>
+        <children>
+          <classification id="101">
+            <id>cls-101</id>
+            <name>Stocks</name>
+            <parent reference="100"/>
+            <children/>
+            <assignments>
+              <assignment>
+                <investmentVehicle class="security" reference="1"/>
+                <weight>10000</weight>
+                <rank>0</rank>
+              </assignment>
+              <assignment>
+                <investmentVehicle class="security" reference="2"/>
+                <weight>10000</weight>
+                <rank>1</rank>
+              </assignment>
+            </assignments>
+            <weight>9000</weight>
+            <rank>0</rank>
+          </classification>
+          <classification id="102">
+            <id>cls-102</id>
+            <name>Cash</name>
+            <parent reference="100"/>
+            <children/>
+            <assignments>
+              <assignment>
+                <investmentVehicle class="account" reference="3"/>
+                <weight>10000</weight>
+                <rank>0</rank>
+              </assignment>
+            </assignments>
+            <weight>1000</weight>
+            <rank>1</rank>
+          </classification>
+        </children>
+        <assignments/>
+        <weight>10000</weight>
+        <rank>0</rank>
+      </root>
+    </taxonomy>
+  </taxonomies>
+</client>
