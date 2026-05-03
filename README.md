@@ -1,12 +1,12 @@
 # :curly_loop: dcallocate
 
 - :heavy_dollar_sign: **`dcallocate`** enables **rebalancing by investing** (no selling), which minimizes fees and realized-gains tax. (Its `--allow-selling` flag also allows a closed-form rebalance that may include sells.)
-- :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly: fills a gap PP's own allocation tool doesn't cover.
+- :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly — fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
 
-Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough relative to the divergence between the assets' current value and their target, is not required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant, `dcallocate` solves the no-selling allocation problem and fills that gap.
+Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough to absorb the drift between the assets' current values and their targets, isn't required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant. `dcallocate` solves the no-selling allocation problem.
 
-The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalance by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
+The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
 
