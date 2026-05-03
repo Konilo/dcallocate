@@ -1,6 +1,6 @@
 # :curly_loop: dcallocate
 
-- :no_entry_sign: `dcallocate` enables **rebalancing by investing** (no selling), which minimizes fees and realized-gains tax. (Its `--allow-selling` flag also allows a closed-form rebalance that may include sells.)
+- :heavy_dollar_sign: **`dcallocate`** enables **rebalancing by investing** (no selling), which minimizes fees and realized-gains tax. (Its `--allow-selling` flag also allows a closed-form rebalance that may include sells.)
 - :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly: fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
 
