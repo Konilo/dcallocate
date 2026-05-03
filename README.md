@@ -170,7 +170,7 @@ Two PP-specific quirks the parser handles transparently:
 1. **`id` / `reference` cross-linking**: PP's XStream serializer declares each object once with `id="N"` and refers to it elsewhere as `<element reference="N"/>`. The parser resolves these globally.
 2. **Fixed-point integers**: `<amount>` is stored × 100 (cents), `<shares>` and `<price v=>` × 1e8, `<weight>` × 10000. All conversions live in one named place: [internal/portfolio/parse.go](internal/portfolio/parse.go).
 
-To find your taxonomy name in the PP UI, open *Portfolio → Reports → Taxonomies* — the panel shows each taxonomy's name as it appears in the XML.
+To find your taxonomy name in the PP UI, see the "Taxonomies" section in the side bar: it shows each taxonomy's name as it appears in the XML.
 
 ## Limitations / known design choices
 
