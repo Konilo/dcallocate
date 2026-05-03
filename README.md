@@ -1,12 +1,14 @@
 # :curly_loop: dcallocate
 
-A tiny CLI that reads a [PortfolioPerformance](https://www.portfolio-performance.info/) XML export, takes an amount of new money to **contribute**, and prints how to split it across your assets so the portfolio drifts toward its target allocation — **never selling, only buying** by default (`--allow-selling` opts into a closed-form rebalance that may include sells).
+> A tiny CLI tool that reads a [PortfolioPerformance](https://www.portfolio-performance.info/) XML file, takes an amount of new money to contribute, and prints how to split it across your assets so that the portfolio approaches its target allocation **without selling**. `--allow-selling` opts into a closed-form rebalance that may include sells.
 
-The technique has a couple of names: **rebalance by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it). The tricky case it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the remaining cash redistributes among the rest — which can in turn push *those* over target, recursively.
+> **Zero third-party dependencies**, distributed as a single static binary.
+
+Selling assets to keep a portfolio balanced causes additional costs (order fees and realized gains taxation) and, when contributions are large enough relative to the divergence between asset current values and targets, is not required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant, `dcallocate` solves the no-selling allocation problem and fills that gap.
+
+The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the rest — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalance by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
-
-**Zero third-party dependencies, distributed as a single static binary.**
 
 ## Install
 
