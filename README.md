@@ -4,7 +4,7 @@
 - :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly: fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
 
-Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough relative to the divergence between the assets current values and targets, is not required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant, `dcallocate` solves the no-selling allocation problem and fills that gap.
+Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough relative to the divergence between the assets' current value and their target, is not required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant, `dcallocate` solves the no-selling allocation problem and fills that gap.
 
 The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalance by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
