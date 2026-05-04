@@ -1,10 +1,13 @@
 # :curly_loop: dcallocate
 
-- :heavy_dollar_sign: **`dcallocate`** enables **rebalancing by investing** (no selling), which minimizes fees and realized-gains tax. (Its `--allow-selling` flag also allows a closed-form rebalance that may include sells.)
+- :heavy_dollar_sign: **DCA-friendly rebalancing.** Default mode is **water-filling**: allocate new contributions to under-weighted assets first, no selling, minimizing fees and realized-gains tax. `--allow-selling` switches to a closed-form rebalance for the occasional full reset.
 - :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly — fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
 
-Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough to absorb the drift between the assets' current values and their targets, isn't required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant. `dcallocate` solves the no-selling allocation problem.
+Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough to absorb the drift between the assets' current values and their targets, isn't required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant. `dcallocate` covers both halves of a typical investor workflow:
+
+- **Recurring DCA contributions** (e.g., monthly or quarterly): water-filling allocates the cash without sells.
+- **Periodic rebalance** (e.g., annually): `--allow-selling` performs a closed-form rebalance for the case where drift has outgrown what contributions can correct.
 
 The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
@@ -72,7 +75,7 @@ Asset Classes                                   40000.00 EUR  100.00 %  100.00 %
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
-Per-asset deltas can be negative (sell that much). Sum of deltas always equals the contribution. Useful for an annual rebalance window where order fees aren't the concern; for monthly drip-investing, the default no-selling mode is usually preferable. Pass `--amount 0 --allow-selling` for a pure rebalance with no fresh cash.
+Per-asset deltas can be negative (sell that much). Sum of deltas always equals the contribution. Pass `--amount 0 --allow-selling` for a pure rebalance with no fresh cash.
 
 ### Flags
 
@@ -177,7 +180,6 @@ To find your taxonomy name in the PP UI, see the "Taxonomies" section in the sid
 ## Limitations / known design choices
 
 - **Single base currency only.** The portfolio's `<baseCurrency>` is honoured throughout (EUR, USD, GBP, ...). A security or account in a *different* currency than the portfolio base aborts parsing with a clear error. FX conversion is out of scope.
-- **No selling by default.** `--allow-selling` is opt-in.
 - **Stale prices.** If the latest `<price>` for a held security is older than 7 days, you get a stderr warning (doesn't block).
 - **Unknown PP transaction types.** PortfolioPerformance's vocabulary is allow-listed; an unrecognised type aborts with a clear error rather than silently miscount — please file an issue if you hit one.
 - **Multi-assignment leaf classifications.** Targets are at the classification level only; per-asset splits are not inferred.
