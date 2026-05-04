@@ -11,7 +11,7 @@ Selling assets to keep a portfolio balanced causes additional costs (order fees,
 
 The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
-For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
+For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
 
 ## Install
 
@@ -151,7 +151,7 @@ $$x_i = t_i \cdot \left(\sum_j c_j + C\right) - c_i \qquad \forall\, i$$
 
 Per-asset deltas may be negative. $\sum_i x_i = C$. Every classification lands exactly on its target weight in one pass.
 
-For the full derivation, correctness proof, and an R reference implementation, see [Konilo/sandbox: portfolio_contribution_complexities.pdf](https://github.com/Konilo/sandbox/blob/main/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.pdf).
+For the full derivation, correctness proof, and an R reference implementation, see [Konilo/sandbox: portfolio_contribution_complexities](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html).
 
 ## PortfolioPerformance file format
 
