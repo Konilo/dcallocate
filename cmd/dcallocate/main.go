@@ -9,6 +9,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -24,16 +25,25 @@ Usage:
   dcallocate [flags] <AMOUNT>
 
   AMOUNT is in the portfolio's base currency (whatever PP's <baseCurrency> says
-  — typically EUR, USD, GBP, ...). Mixed-currency portfolios are not supported.
+  e.g., EUR, USD, GBP). Mixed-currency portfolios are not supported.
 
 Examples:
-  dcallocate 500                                          # uses saved config
-  dcallocate --amount 500                                 # same
+  # First run:
+  dcallocate --xml /path/to/portfolio.xml --taxonomy "Asset Classes" --save-config 1000
+  # Same but with interactive inputs:
+  dcallocate --save-config 1000
+  # Uses saved config (falls back to interactive if none):
+  dcallocate 500
+  # Same:
+  dcallocate --amount 500
+  # Overriding saved values (if any):
   dcallocate --xml ./pp.xml --taxonomy "Asset Classes" 500
-  dcallocate 500 --save-config                            # remember --xml + --taxonomy
-  dcallocate --json 500                                   # machine-readable output
+  # Machine-readable output:
+  dcallocate --json 500
+  # Closed-form rebalancing:
+  dcallocate --allow-selling 500
 
-Configuration is loaded from / written to:
+Configuration is loaded from/written to:
   %s
 
 Flags:
@@ -59,11 +69,15 @@ func run(args []string) int {
 		fmt.Fprintf(fs.Output(), usageTmpl, cfgPath)
 		fs.PrintDefaults()
 	}
+	// Mute flag's auto-printed errors and usage so we control the output.
+	fs.SetOutput(io.Discard)
 	if err := fs.Parse(args); err != nil {
-		// flag already prints; ContinueOnError returns the error.
 		if errors.Is(err, flag.ErrHelp) {
+			fs.SetOutput(os.Stdout)
+			fs.Usage()
 			return 0
 		}
+		fmt.Fprintf(os.Stderr, "error: %v\nRun 'dcallocate --help' for usage.\n", err)
 		return 2
 	}
 
@@ -71,7 +85,7 @@ func run(args []string) int {
 	case "auto", "always", "never":
 	default:
 		fmt.Fprintf(os.Stderr, "error: invalid --color %q (must be auto, always, or never)\n", *colorMode)
-		fs.Usage()
+		fmt.Fprintln(os.Stderr, "Run 'dcallocate --help' for usage.")
 		return 2
 	}
 
@@ -95,12 +109,12 @@ func run(args []string) int {
 		amountProvided = true
 	} else if fs.NArg() > 1 {
 		fmt.Fprintln(os.Stderr, "error: too many positional arguments")
-		fs.Usage()
+		fmt.Fprintln(os.Stderr, "Run 'dcallocate --help' for usage.")
 		return 2
 	}
 	if !amountProvided {
 		fmt.Fprintln(os.Stderr, "error: amount is required (use AMOUNT positional or --amount)")
-		fs.Usage()
+		fmt.Fprintln(os.Stderr, "Run 'dcallocate --help' for usage.")
 		return 2
 	}
 	if amount < 0 {
