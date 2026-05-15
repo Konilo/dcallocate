@@ -16,6 +16,7 @@ const (
 	ansiReset = "\x1b[0m"
 	ansiDim   = "\x1b[2m"
 	ansiBold  = "\x1b[1m"
+	ansiRed   = "\x1b[31m"
 
 	nameColWidth = 44
 )
@@ -25,6 +26,10 @@ const (
 // bold; tree glyphs dim where they lead only to stuck subtrees). Money
 // columns are labelled with the portfolio's base currency, read from
 // root.BaseCurrency.
+//
+// If bandCheck is true (default in the CLI), two extra columns are shown —
+// post-contribution % and the node's 5/25 binding band — and a warning is
+// printed when any node ends up outside its band.
 //
 // Highlighting rules:
 //
@@ -41,18 +46,35 @@ const (
 //
 // Inner nodes' Stuck rollup means Stuck == false ⇔ subtree has an unstuck
 // leaf, so checking a sibling's Stuck flag is sufficient.
-func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
+func Tree(w io.Writer, root *portfolio.Node, amount float64, color, bandCheck bool) {
 	rootCurrent := root.Current
+	postTotal := rootCurrent + amount
 	ccy := root.BaseCurrency
 
-	// Header. Body line column widths are: name (nameColWidth) + 2sp + 14
-	// (10.2f " <ccy>") + 2sp + 8 (6.2f " %") + 2sp + 8 + 2sp + 14 invest.
-	header := fmt.Sprintf("%s  %14s  %8s  %8s  %14s",
-		padRunes("asset", nameColWidth),
-		"current",
-		"now %",
-		"target %",
-		"invest")
+	// Body line column widths: name (nameColWidth) + 2sp + 14 (10.2f " <ccy>")
+	// + 2sp + 8 (6.2f " %") + 2sp + 8 + 2sp + 14 invest. When bandCheck is on,
+	// two extra columns slot between target % and invest: 9 (post %, with
+	// optional `!` marker) + 2sp + 12 (5/25 band, right-padded "%.2f-%.2f").
+	// 12 chars accommodates the longest realistic band ("90.00-100.00" when
+	// a target sits at or just below 1.0).
+	var header string
+	if bandCheck {
+		header = fmt.Sprintf("%s  %14s  %8s  %8s  %9s  %12s  %14s",
+			padRunes("asset", nameColWidth),
+			"current",
+			"now %",
+			"target %",
+			"post %",
+			"5/25 band",
+			"invest")
+	} else {
+		header = fmt.Sprintf("%s  %14s  %8s  %8s  %14s",
+			padRunes("asset", nameColWidth),
+			"current",
+			"now %",
+			"target %",
+			"invest")
+	}
 	if color {
 		fmt.Fprintln(w, ansiBold+header+ansiReset)
 	} else {
@@ -86,6 +108,11 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 		}
 		return b.String()
 	}
+
+	// breaches accumulates nodes whose post-contribution weight falls outside
+	// their 5/25 band; populated by walk when bandCheck is on, consumed by
+	// the footer below.
+	var breaches []*portfolio.Node
 
 	// walk renders n. ancestors holds one contViz per ancestor (root excluded
 	// since it contributes no column). isLast = n is its parent's last child.
@@ -123,13 +150,45 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 		if n.Stuck {
 			investStr = fmt.Sprintf("%14s", "—")
 		}
-		values := dimIf(
-			fmt.Sprintf("  %10.2f %s  %6.2f %%  %6.2f %%  %s",
-				n.Current, ccy, nowPct, n.Target*100, investStr),
-			n.Stuck,
-		)
 
-		fmt.Fprintln(w, prefix+conn+name+values)
+		coreCells := fmt.Sprintf("  %10.2f %s  %6.2f %%  %6.2f %%",
+			n.Current, ccy, nowPct, n.Target*100)
+		coreCells = dimIf(coreCells, n.Stuck)
+		investCell := dimIf("  "+investStr, n.Stuck)
+
+		extras := ""
+		if bandCheck {
+			postPct := 0.0
+			if postTotal > 0 {
+				postPct = (n.Current + n.Investment) / postTotal * 100
+			}
+			postCell := fmt.Sprintf("%6.2f %% ", postPct) // 9 chars: 8 + trailing space to match header width
+			bandCell := strings.Repeat(" ", 12)
+			breach := false
+			// Skip band for root (depth 0): its band is mathematically always
+			// trivially satisfied (post % = 100% by construction) and the
+			// information is not useful at the totals row.
+			if n.Target > 0 && depth > 0 {
+				lo, hi := bindingBand(n.Target)
+				bandCell = fmt.Sprintf("%12s", fmt.Sprintf("%.2f-%.2f", lo*100, hi*100))
+				breach = nodeBreaches(n, postTotal)
+			}
+			// Apply dim to the band cell (purely informational) and to the
+			// post % cell when not breaching. A breach keeps the marker
+			// visible: red overrides the dim.
+			bandCell = dimIf(bandCell, n.Stuck)
+			if breach {
+				if color {
+					postCell = ansiRed + postCell + ansiReset
+				}
+				breaches = append(breaches, n)
+			} else {
+				postCell = dimIf(postCell, n.Stuck)
+			}
+			extras = "  " + postCell + "  " + bandCell
+		}
+
+		fmt.Fprintln(w, prefix+conn+name+coreCells+extras+investCell)
 
 		// Ancestors carried into descendants. Root contributes no column.
 		var nextAncestors []contViz
@@ -179,6 +238,25 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 	walk(root, nil, true, false, 0)
 
 	fmt.Fprintln(w, strings.Repeat("─", utf8.RuneCountInString(header)))
+
+	if bandCheck && len(breaches) > 0 {
+		names := make([]string, len(breaches))
+		for i, n := range breaches {
+			names[i] = n.Name
+		}
+		noun := "node"
+		if len(breaches) > 1 {
+			noun = "nodes"
+		}
+		warn := fmt.Sprintf("! Portfolio is unbalanced, %d %s outside 5/25 band: %s",
+			len(breaches), noun, strings.Join(names, ", "))
+		if color {
+			fmt.Fprintln(w, ansiBold+ansiRed+warn+ansiReset)
+		} else {
+			fmt.Fprintln(w, warn)
+		}
+	}
+
 	footer := fmt.Sprintf("Total contributed: %+.2f %s  (post-contribution portfolio: %.2f %s)",
 		amount, ccy, rootCurrent+amount, ccy)
 	if color {
@@ -188,19 +266,81 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color bool) {
 	}
 }
 
-// JSON writes the tree as a JSON document with a small envelope.
+// jsonNode mirrors portfolio.Node for JSON emission, with derived fields:
+// post-contribution share, 5/25 band bounds, and a breach flag. Carried in
+// render rather than on portfolio.Node to keep the parser/portfolio package
+// free of allocation-derived concerns.
+//
+// All weight fields (target, postContribution, bandLo, bandHi) are absolute
+// ratios in [0, 1] of the post-contribution portfolio total — matching the
+// convention used by portfolio.Node.Target.
+type jsonNode struct {
+	Name             string                 `json:"name"`
+	BaseCurrency     string                 `json:"baseCurrency,omitempty"`
+	Current          float64                `json:"current"`
+	Target           float64                `json:"target"`
+	Investment       float64                `json:"investment"`
+	Stuck            bool                   `json:"stuck"`
+	PostContribution float64                `json:"postContribution"`
+	BandLo           *float64               `json:"bandLo,omitempty"`
+	BandHi           *float64               `json:"bandHi,omitempty"`
+	Breach           bool                   `json:"breach"`
+	Children         []jsonNode             `json:"children,omitempty"`
+	Assignments      []portfolio.Assignment `json:"assignments,omitempty"`
+}
+
+// toJSONNode recursively converts a portfolio.Node into a jsonNode, filling
+// in derived fields. depth lets us skip band emission for the root, where
+// the band is trivially [0.95, 1.05] and not informative.
+func toJSONNode(n *portfolio.Node, postTotal float64, depth int) jsonNode {
+	jn := jsonNode{
+		Name:         n.Name,
+		BaseCurrency: n.BaseCurrency,
+		Current:      n.Current,
+		Target:       n.Target,
+		Investment:   n.Investment,
+		Stuck:        n.Stuck,
+		Assignments:  n.Assignments,
+	}
+	if postTotal > 0 {
+		jn.PostContribution = (n.Current + n.Investment) / postTotal
+	}
+	if n.Target > 0 && depth > 0 {
+		lo, hi := bindingBand(n.Target)
+		jn.BandLo = &lo
+		jn.BandHi = &hi
+		jn.Breach = nodeBreaches(n, postTotal)
+	}
+	for _, c := range n.Children {
+		jn.Children = append(jn.Children, toJSONNode(c, postTotal, depth+1))
+	}
+	return jn
+}
+
+// JSON writes the tree as a JSON document with a small envelope: the
+// contribution amount, pre- and post-contribution totals, the enriched
+// node tree, and a flat list of names of nodes outside their 5/25 band.
 func JSON(w io.Writer, root *portfolio.Node, amount float64) error {
 	type out struct {
-		Amount       float64         `json:"amount"`
-		CurrentTotal float64         `json:"currentTotal"`
-		Root         *portfolio.Node `json:"root"`
+		Amount       float64  `json:"amount"`
+		CurrentTotal float64  `json:"currentTotal"`
+		PostTotal    float64  `json:"postTotal"`
+		Root         jsonNode `json:"root"`
+		Breaches     []string `json:"breaches"`
+	}
+	postTotal := root.Current + amount
+	breaches := collectBreachNames(root, amount)
+	if breaches == nil {
+		breaches = []string{} // emit `[]` rather than `null`
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(out{
 		Amount:       amount,
 		CurrentTotal: root.Current,
-		Root:         root,
+		PostTotal:    postTotal,
+		Root:         toJSONNode(root, postTotal, 0),
+		Breaches:     breaches,
 	})
 }
 
@@ -221,4 +361,52 @@ func truncRunes(s string, n int) string {
 	}
 	runes := []rune(s)
 	return string(runes[:n-1]) + "…"
+}
+
+// bindingBand returns the inclusive lower/upper bound of the 5/25 rule's
+// binding band for a target weight (target in [0,1]). The binding band is
+// the tighter of: absolute ±5pp, or relative ±25% of the target — whichever
+// is smaller, per Swedroe. Lower bound is clamped at 0.
+func bindingBand(target float64) (lo, hi float64) {
+	bound := 0.05
+	if rel := 0.25 * target; rel < bound {
+		bound = rel
+	}
+	lo = target - bound
+	if lo < 0 {
+		lo = 0
+	}
+	hi = target + bound
+	return
+}
+
+// nodeBreaches reports whether n's post-contribution weight is outside its
+// 5/25 binding band. postTotal is the post-contribution sum of all leaves
+// (== root.Current + amount). Returns false for nodes without a target or
+// when the portfolio is empty.
+func nodeBreaches(n *portfolio.Node, postTotal float64) bool {
+	if n.Target <= 0 || postTotal <= 0 {
+		return false
+	}
+	postPct := (n.Current + n.Investment) / postTotal * 100
+	lo, hi := bindingBand(n.Target)
+	return postPct < lo*100 || postPct > hi*100
+}
+
+// collectBreachNames walks the tree (skipping the root) and returns the
+// names of nodes that breach their 5/25 band, in DFS order.
+func collectBreachNames(root *portfolio.Node, amount float64) []string {
+	postTotal := root.Current + amount
+	var names []string
+	var walk func(n *portfolio.Node, depth int)
+	walk = func(n *portfolio.Node, depth int) {
+		if depth > 0 && nodeBreaches(n, postTotal) {
+			names = append(names, n.Name)
+		}
+		for _, c := range n.Children {
+			walk(c, depth+1)
+		}
+	}
+	walk(root, 0)
+	return names
 }

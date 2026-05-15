@@ -38,20 +38,52 @@ dcallocate 1000
 Output is a tree showing every classification node — including roll-up totals at inner nodes (so you see "wire €X to your broker" via the parent of the children that need the money) — plus, for visibility, the underlying securities/accounts that make up each leaf classification:
 
 ```
-asset                                                current     now %  target %          invest
-────────────────────────────────────────────────────────────────────────────────────────────────
-Asset Classes                                   40000.00 EUR  100.00 %  100.00 %    +1000.00 EUR
-├── Stocks                                      30000.00 EUR   75.00 %   70.00 %               —
+asset                                                current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks                                      30000.00 EUR   75.00 %   70.00 %   73.17 %    65.00-75.00               —
 │   └── Index ETF                               30000.00 EUR
-├── Bonds                                        8000.00 EUR   20.00 %   25.00 %    +1000.00 EUR
+├── Bonds                                        8000.00 EUR   20.00 %   25.00 %   21.95 %    20.00-30.00    +1000.00 EUR
 │   └── Bond ETF                                 8000.00 EUR
-└── Cash                                         2000.00 EUR    5.00 %    5.00 %               —
+└── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
     └── Money Market                             2000.00 EUR
-────────────────────────────────────────────────────────────────────────────────────────────────
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
 The `—` in the *invest* column marks **stuck** classifications (already at or over their target after the contribution lands — they receive nothing). Note that *Cash* is exactly at target percentage but still stuck: once Stocks (the most-overweight class) is excluded from receiving funds, the remaining contribution gets redistributed proportionally among Bonds and Cash, and Cash's renormalised share would push it slightly below its current value (a sell) — which the no-selling rule forbids, so Cash is stuck too. All €1,000 ends up in Bonds.
+
+### The 5/25 rule check
+
+The *post %* and *5/25 band* columns tell you whether water-filling alone is keeping the portfolio close enough to its targets. The band for each classification is the tighter of:
+
+- **absolute** ±5 percentage points around the target, and
+- **relative** ±25 % of the target (binding only when the target is small — below 20 %).
+
+This is the Bogleheads / Larry Swedroe **5/25 rule** — see the [Bogleheads wiki](https://www.bogleheads.org/wiki/Rebalancing#cite_note-5/25-1).
+
+When the post-contribution share of any classification falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal). Here Stocks have drifted down to 55 % (well below the 65 - 75 % band) and Bonds up to 40 % (above the 20 - 30 % band); the contribution can only buy more Stocks but not enough to absorb the drift:
+
+```
+asset                                                current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks                                      22000.00 EUR   55.00 %   70.00 %   56.10 %    65.00-75.00    +1000.00 EUR
+│   └── Index ETF                               22000.00 EUR
+├── Bonds                                       16000.00 EUR   40.00 %   25.00 %   39.02 %    20.00-30.00               —
+│   └── Bond ETF                                16000.00 EUR
+└── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
+    └── Money Market                             2000.00 EUR
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+! Portfolio is unbalanced, 2 nodes outside 5/25 band: Stocks, Bonds
+Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
+```
+
+A breach means your monthly contribution is no longer big enough to absorb the drift. That's the signal to switch from water-filling to a closed-form rebalance — re-run with [`--allow-selling`](#allowing-selling).
+
+Pass `dcallocate --amount 0` (or just `dcallocate 0`) to see the band check against the current portfolio without simulating any contribution — the *post %* column then equals *now %*.
+
+Pass `--no-band-check` to hide the two extra columns and the warning (e.g. for a narrower terminal or scripted use).
 
 ### Allowing selling
 
@@ -62,16 +94,16 @@ dcallocate --allow-selling 1000
 ```
 
 ```
-asset                                                current     now %  target %          invest
-────────────────────────────────────────────────────────────────────────────────────────────────
-Asset Classes                                   40000.00 EUR  100.00 %  100.00 %    +1000.00 EUR
-├── Stocks                                      30000.00 EUR   75.00 %   70.00 %    -1300.00 EUR
+asset                                                current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks                                      30000.00 EUR   75.00 %   70.00 %   70.00 %    65.00-75.00    -1300.00 EUR
 │   └── Index ETF                               30000.00 EUR
-├── Bonds                                        8000.00 EUR   20.00 %   25.00 %    +2250.00 EUR
+├── Bonds                                        8000.00 EUR   20.00 %   25.00 %   25.00 %    20.00-30.00    +2250.00 EUR
 │   └── Bond ETF                                 8000.00 EUR
-└── Cash                                         2000.00 EUR    5.00 %    5.00 %      +50.00 EUR
+└── Cash                                         2000.00 EUR    5.00 %    5.00 %    5.00 %      3.75-6.25      +50.00 EUR
     └── Money Market                             2000.00 EUR
-────────────────────────────────────────────────────────────────────────────────────────────────
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
@@ -86,6 +118,7 @@ Per-asset deltas can be negative (sell that much). Sum of deltas always equals t
 | `--amount EUR`     | amount to contribute, in the portfolio's base currency (or pass it positionally: `dcallocate 1000`)    |
 | `--save-config`    | persist `--xml` and `--taxonomy` for next time                                                         |
 | `--allow-selling`  | permit negative per-asset deltas (sells) so weights land exactly on target                             |
+| `--no-band-check`  | hide the post-contribution 5/25 rule check (extra *post %* and *5/25 band* columns + unbalance warning); on by default |
 | `--color MODE`     | `auto` (default), `always`, or `never`                                                                 |
 | `--json`           | machine-readable output                                                                                |
 

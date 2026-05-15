@@ -42,6 +42,8 @@ Examples:
   dcallocate --json 500
   # Closed-form rebalancing:
   dcallocate --allow-selling 500
+  # Disable the 5/25 band check (compact 5-column output):
+  dcallocate --no-band-check 500
 
 Configuration is loaded from/written to:
   %s
@@ -54,13 +56,14 @@ func main() { os.Exit(run(os.Args[1:])) }
 func run(args []string) int {
 	fs := flag.NewFlagSet("dcallocate", flag.ContinueOnError)
 	var (
-		xmlPath   = fs.String("xml", "", "path to the PortfolioPerformance XML file")
-		taxName   = fs.String("taxonomy", "", "taxonomy name to rebalance against (e.g. \"Asset Classes\")")
-		amountF   = fs.Float64("amount", 0, "amount to contribute, in the portfolio's base currency")
-		asJSON    = fs.Bool("json", false, "emit JSON instead of the pretty tree")
-		saveCfg   = fs.Bool("save-config", false, "save --xml and --taxonomy to the user config")
-		colorMode = fs.String("color", "auto", "when to emit ANSI colors: auto (default; honors NO_COLOR and TTY), always, or never")
-		allowSell = fs.Bool("allow-selling", false, "permit negative per-asset deltas (sells) so weights land exactly on target; default is buy-only")
+		xmlPath     = fs.String("xml", "", "path to the PortfolioPerformance XML file")
+		taxName     = fs.String("taxonomy", "", "taxonomy name to rebalance against (e.g. \"Asset Classes\")")
+		amountF     = fs.Float64("amount", 0, "amount to contribute, in the portfolio's base currency")
+		asJSON      = fs.Bool("json", false, "emit JSON instead of the pretty tree")
+		saveCfg     = fs.Bool("save-config", false, "save --xml and --taxonomy to the user config")
+		colorMode   = fs.String("color", "auto", "when to emit ANSI colors: auto (default; honors NO_COLOR and TTY), always, or never")
+		allowSell   = fs.Bool("allow-selling", false, "permit negative per-asset deltas (sells) so weights land exactly on target; default is buy-only")
+		noBandCheck = fs.Bool("no-band-check", false, "disable the post-contribution 5/25 rule check (extra Post % and 5/25 band columns + unbalance warning); default is enabled")
 	)
 
 	cfgDir, _ := config.DefaultDir()
@@ -209,7 +212,7 @@ func run(args []string) int {
 		return 0
 	}
 	color := wantColor(*colorMode, os.Stdout)
-	render.Tree(os.Stdout, tree, amount, color)
+	render.Tree(os.Stdout, tree, amount, color, !*noBandCheck)
 	return 0
 }
 
