@@ -62,12 +62,18 @@ The *post %* and *5/25 band* columns tell you whether water-filling alone is kee
 
 This is the Bogleheads / Larry Swedroe **5/25 rule** — see the [Bogleheads wiki](https://www.bogleheads.org/wiki/Rebalancing#cite_note-5/25-1).
 
-When the post-contribution share of any classification falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal):
+When the post-contribution share of any classification falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal). Here Stocks have drifted down to 55 % (well below the 65 - 75 % band) and Bonds up to 40 % (above the 20 - 30 % band); the contribution can only buy more Stocks but not enough to absorb the drift:
 
 ```
+asset                                                current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
 ├── Stocks                                      22000.00 EUR   55.00 %   70.00 %   56.10 %    65.00-75.00    +1000.00 EUR
+│   └── Index ETF                               22000.00 EUR
 ├── Bonds                                       16000.00 EUR   40.00 %   25.00 %   39.02 %    20.00-30.00               —
+│   └── Bond ETF                                16000.00 EUR
 └── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
+    └── Money Market                             2000.00 EUR
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ! Portfolio is unbalanced, 2 nodes outside 5/25 band: Stocks, Bonds
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
