@@ -18,8 +18,46 @@ const (
 	ansiBold  = "\x1b[1m"
 	ansiRed   = "\x1b[31m"
 
-	nameColWidth = 44
+	// nameColMin floors the dynamic name-column width so the literal header
+	// text "asset" always fits, even on a portfolio with very short names.
+	nameColMin = 5
 )
+
+// measureNameCol returns the rune-width the name column needs to fit every
+// row that Tree will render: each node's `prefix + connector + name`, and
+// each leaf's assignment rows (`prefix + connector + asg.Name`). Floored at
+// nameColMin so the header literal always fits.
+//
+// Geometry matches walk's: for a node at depth d, the prefix is (d-1)*4
+// runes when d ≥ 1 (one continuation column per ancestor, excluding the
+// root) and the connector is 4 runes. For an assignment hanging under a
+// depth-d leaf, the prefix is d*4 runes and the connector is 4 runes.
+func measureNameCol(root *portfolio.Node) int {
+	max := nameColMin
+	var walk func(n *portfolio.Node, depth int)
+	walk = func(n *portfolio.Node, depth int) {
+		w := utf8.RuneCountInString(n.Name)
+		if depth >= 1 {
+			w += (depth-1)*4 + 4
+		}
+		if w > max {
+			max = w
+		}
+		for _, c := range n.Children {
+			walk(c, depth+1)
+		}
+		if n.IsLeaf() {
+			for _, a := range n.Assignments {
+				aw := utf8.RuneCountInString(a.Name) + depth*4 + 4
+				if aw > max {
+					max = aw
+				}
+			}
+		}
+	}
+	walk(root, 0)
+	return max
+}
 
 // Tree writes a human-readable tree of the portfolio + computed allocations
 // to w. If color is true, ANSI escape codes are emitted (header & footer
@@ -50,6 +88,11 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color, bandCheck bo
 	rootCurrent := root.Current
 	postTotal := rootCurrent + amount
 	ccy := root.BaseCurrency
+
+	// nameColWidth is sized to the widest rendered row's name column,
+	// floored at the header literal. Everything downstream — header, ruler,
+	// per-row name padding — flows from this single value.
+	nameColWidth := measureNameCol(root)
 
 	// Body line column widths: name (nameColWidth) + 2sp + 14 (10.2f " <ccy>")
 	// + 2sp + 8 (6.2f " %") + 2sp + 8 + 2sp + 14 invest. When bandCheck is on,

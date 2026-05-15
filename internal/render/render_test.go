@@ -215,17 +215,19 @@ func alignmentFixture() *portfolio.Node {
 }
 
 func TestTree_ColumnAlignment_BandCheckOn(t *testing.T) {
-	// 7-column layout: 44 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 9 + 2 + 12 + 2 + 14 = 121.
+	// Name column is sized dynamically; this fixture's widest row is the
+	// root "Asset Classes" at 13 runes. 7-column layout:
+	// 13 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 9 + 2 + 12 + 2 + 14 = 90.
 	root := alignmentFixture()
 	var buf bytes.Buffer
 	Tree(&buf, root, 0, false, true)
-	assertRowsAligned(t, buf.String(), 121, []int{44, 60, 70, 80, 91, 105})
+	assertRowsAligned(t, buf.String(), 90, []int{13, 29, 39, 49, 60, 74})
 }
 
 func TestTree_ColumnAlignment_BandCheckOff(t *testing.T) {
-	// 5-column layout: 44 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 14 = 96.
+	// 5-column layout: 13 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 14 = 65.
 	root := alignmentFixture()
 	var buf bytes.Buffer
 	Tree(&buf, root, 0, false, false)
-	assertRowsAligned(t, buf.String(), 96, []int{44, 60, 70, 80})
+	assertRowsAligned(t, buf.String(), 65, []int{13, 29, 39, 49})
 }
