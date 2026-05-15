@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/Konilo/dcallocate/internal/portfolio"
 )
@@ -146,4 +147,85 @@ func TestTree_BandCheckOff(t *testing.T) {
 	if strings.Contains(out, "Portfolio is unbalanced") {
 		t.Errorf("bandCheck=false should suppress warning footer; got:\n%s", out)
 	}
+}
+
+// assertRowsAligned walks every full-width row in out and checks two
+// invariants: (1) the row is exactly wantWidth runes wide; (2) the 2-space
+// inter-cell separator is intact at each of sepCols. Skips lines that
+// shouldn't fill the table width: the horizontal "─" separators, the
+// "Total contributed" line, the optional "! Portfolio is unbalanced..."
+// warning, and the empty trailing line.
+func assertRowsAligned(t *testing.T, out string, wantWidth int, sepCols []int) {
+	t.Helper()
+	for i, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
+		if line == "" ||
+			strings.HasPrefix(line, "Total contributed") ||
+			strings.HasPrefix(line, "! Portfolio") {
+			continue
+		}
+		// Horizontal separator: all "─" runes.
+		runes := []rune(line)
+		allSep := len(runes) > 0
+		for _, r := range runes {
+			if r != '─' {
+				allSep = false
+				break
+			}
+		}
+		if allSep {
+			// The separator is still expected to span the table width.
+			if utf8.RuneCountInString(line) != wantWidth {
+				t.Errorf("line %d (separator) width = %d runes, want %d", i, len(runes), wantWidth)
+			}
+			continue
+		}
+		if len(runes) != wantWidth {
+			t.Errorf("line %d width = %d runes, want %d:\n%s", i, len(runes), wantWidth, line)
+			continue
+		}
+		for _, c := range sepCols {
+			if runes[c] != ' ' || runes[c+1] != ' ' {
+				t.Errorf("line %d: expected 2-space separator at cols %d-%d, got %q in:\n%s",
+					i, c, c+1, string(runes[c:c+2]), line)
+			}
+		}
+	}
+}
+
+// alignmentFixture returns a 4-leaf root with no Assignments (so every
+// rendered row is a full-width data row, not a name+current assignment
+// row). Targets are chosen to exercise edge-case band widths:
+//   - 0.95 → band hi reaches 100% ("90.00-100.00", the 12-char max-width case)
+//   - 0.04 → absolute-5pp band
+//   - 0.005 ×2 → relative-25% band on a very small target
+func alignmentFixture() *portfolio.Node {
+	leaves := []*portfolio.Node{
+		{Name: "Stocks", Current: 95, Target: 0.95},
+		{Name: "Bonds", Current: 4, Target: 0.04},
+		{Name: "Cash", Current: 0.5, Target: 0.005},
+		{Name: "Reserve", Current: 0.5, Target: 0.005},
+	}
+	root := &portfolio.Node{
+		Name:         "Asset Classes",
+		BaseCurrency: "EUR",
+		Children:     leaves,
+	}
+	root.Rollup()
+	return root
+}
+
+func TestTree_ColumnAlignment_BandCheckOn(t *testing.T) {
+	// 7-column layout: 44 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 9 + 2 + 12 + 2 + 14 = 121.
+	root := alignmentFixture()
+	var buf bytes.Buffer
+	Tree(&buf, root, 0, false, true)
+	assertRowsAligned(t, buf.String(), 121, []int{44, 60, 70, 80, 91, 105})
+}
+
+func TestTree_ColumnAlignment_BandCheckOff(t *testing.T) {
+	// 5-column layout: 44 + 2 + 14 + 2 + 8 + 2 + 8 + 2 + 14 = 96.
+	root := alignmentFixture()
+	var buf bytes.Buffer
+	Tree(&buf, root, 0, false, false)
+	assertRowsAligned(t, buf.String(), 96, []int{44, 60, 70, 80})
 }
