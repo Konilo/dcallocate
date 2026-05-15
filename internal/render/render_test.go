@@ -46,18 +46,12 @@ func makeTree(currA, currB, investA, investB float64) *portfolio.Node {
 func TestTree_BandCheck_Breach(t *testing.T) {
 	// 100 EUR in A, 0 EUR in B → 100% A, 0% B. Contribute 0 so post % stays
 	// at the unbalanced split. Both leaves breach their 50% target with
-	// band [0.45, 0.55].
+	// band [0.45, 0.55]. Without color, the only signal is the warning footer.
 	root := makeTree(100, 0, 0, 0)
 	var buf bytes.Buffer
 	Tree(&buf, root, 0, false, true)
 	out := buf.String()
 
-	if !strings.Contains(out, "100.00 %!") {
-		t.Errorf("expected A's post-pct row to carry breach marker; got:\n%s", out)
-	}
-	if !strings.Contains(out, "  0.00 %!") {
-		t.Errorf("expected B's post-pct row to carry breach marker; got:\n%s", out)
-	}
 	if !strings.Contains(out, "Portfolio is unbalanced") {
 		t.Errorf("expected warning footer; got:\n%s", out)
 	}
@@ -73,9 +67,6 @@ func TestTree_BandCheck_NoBreach(t *testing.T) {
 	Tree(&buf, root, 0, false, true)
 	out := buf.String()
 
-	if strings.Contains(out, "%!") {
-		t.Errorf("did not expect any breach marker; got:\n%s", out)
-	}
 	if strings.Contains(out, "Portfolio is unbalanced") {
 		t.Errorf("did not expect warning footer; got:\n%s", out)
 	}

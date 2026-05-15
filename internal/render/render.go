@@ -162,7 +162,7 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color, bandCheck bo
 			if postTotal > 0 {
 				postPct = (n.Current + n.Investment) / postTotal * 100
 			}
-			postCell := fmt.Sprintf("%6.2f %% ", postPct) // 9 chars: 8 + trailing space for marker slot
+			postCell := fmt.Sprintf("%6.2f %% ", postPct) // 9 chars: 8 + trailing space to match header width
 			bandCell := strings.Repeat(" ", 12)
 			breach := false
 			// Skip band for root (depth 0): its band is mathematically always
@@ -171,10 +171,7 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color, bandCheck bo
 			if n.Target > 0 && depth > 0 {
 				lo, hi := bindingBand(n.Target)
 				bandCell = fmt.Sprintf("%12s", fmt.Sprintf("%.2f-%.2f", lo*100, hi*100))
-				if nodeBreaches(n, postTotal) {
-					breach = true
-					postCell = fmt.Sprintf("%6.2f %%!", postPct)
-				}
+				breach = nodeBreaches(n, postTotal)
 			}
 			// Apply dim to the band cell (purely informational) and to the
 			// post % cell when not breaching. A breach keeps the marker

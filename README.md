@@ -62,11 +62,11 @@ The *post %* and *5/25 band* columns tell you whether water-filling alone is kee
 
 This is the Bogleheads / Larry Swedroe **5/25 rule** — see the [Bogleheads wiki](https://www.bogleheads.org/wiki/Rebalancing#cite_note-5/25-1).
 
-When the post-contribution share of any classification falls outside its band, the row carries a `!` after *post %* and a warning is printed under the table:
+When the post-contribution share of any classification falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal):
 
 ```
-├── Stocks                                      22000.00 EUR   55.00 %   70.00 %   56.10 %!   65.00-75.00    +1000.00 EUR
-├── Bonds                                       16000.00 EUR   40.00 %   25.00 %   39.02 %!   20.00-30.00               —
+├── Stocks                                      22000.00 EUR   55.00 %   70.00 %   56.10 %    65.00-75.00    +1000.00 EUR
+├── Bonds                                       16000.00 EUR   40.00 %   25.00 %   39.02 %    20.00-30.00               —
 └── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ! Portfolio is unbalanced, 2 nodes outside 5/25 band: Stocks, Bonds
