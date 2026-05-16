@@ -1,4 +1,8 @@
-# :curly_loop: dcallocate
+<p align="left">
+  <img src="assets/logo.svg" alt="dcallocate logo" width="96">
+</p>
+
+# dcallocate
 
 [![CI](https://github.com/Konilo/dcallocate/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Konilo/dcallocate/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Konilo/dcallocate)](https://github.com/Konilo/dcallocate/releases/latest)
