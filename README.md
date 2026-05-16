@@ -49,16 +49,16 @@ dcallocate 1000
 Output is a tree showing every classification node — including roll-up totals at inner nodes (so you see "wire €X to your broker" via the parent of the children that need the money) — plus, for visibility, the underlying securities/accounts that make up each leaf classification:
 
 ```
-asset                                                current     now %  target %     post %     5/25 band          invest
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
-├── Stocks                                      30000.00 EUR   75.00 %   70.00 %   73.17 %    65.00-75.00               —
-│   └── Index ETF                               30000.00 EUR
-├── Bonds                                        8000.00 EUR   20.00 %   25.00 %   21.95 %    20.00-30.00    +1000.00 EUR
-│   └── Bond ETF                                 8000.00 EUR
-└── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
-    └── Money Market                             2000.00 EUR
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+asset                        current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks              30000.00 EUR   75.00 %   70.00 %   73.17 %    65.00-75.00               —
+│   └── Index ETF       30000.00 EUR
+├── Bonds                8000.00 EUR   20.00 %   25.00 %   21.95 %    20.00-30.00    +1000.00 EUR
+│   └── Bond ETF         8000.00 EUR
+└── Cash                 2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
+    └── Money Market     2000.00 EUR
+─────────────────────────────────────────────────────────────────────────────────────────────────
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
@@ -76,16 +76,16 @@ This is the Bogleheads / Larry Swedroe **5/25 rule** — see the [Bogleheads wik
 When the post-contribution share of any classification falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal). Here Stocks have drifted down to 55 % (well below the 65 - 75 % band) and Bonds up to 40 % (above the 20 - 30 % band); the contribution can only buy more Stocks but not enough to absorb the drift:
 
 ```
-asset                                                current     now %  target %     post %     5/25 band          invest
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
-├── Stocks                                      22000.00 EUR   55.00 %   70.00 %   56.10 %    65.00-75.00    +1000.00 EUR
-│   └── Index ETF                               22000.00 EUR
-├── Bonds                                       16000.00 EUR   40.00 %   25.00 %   39.02 %    20.00-30.00               —
-│   └── Bond ETF                                16000.00 EUR
-└── Cash                                         2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
-    └── Money Market                             2000.00 EUR
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+asset                        current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks              22000.00 EUR   55.00 %   70.00 %   56.10 %    65.00-75.00    +1000.00 EUR
+│   └── Index ETF       22000.00 EUR
+├── Bonds               16000.00 EUR   40.00 %   25.00 %   39.02 %    20.00-30.00               —
+│   └── Bond ETF        16000.00 EUR
+└── Cash                 2000.00 EUR    5.00 %    5.00 %    4.88 %      3.75-6.25               —
+    └── Money Market     2000.00 EUR
+─────────────────────────────────────────────────────────────────────────────────────────────────
 ! Portfolio is unbalanced, 2 nodes outside 5/25 band: Stocks, Bonds
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
@@ -105,16 +105,16 @@ dcallocate --allow-selling 1000
 ```
 
 ```
-asset                                                current     now %  target %     post %     5/25 band          invest
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Asset Classes                                   40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
-├── Stocks                                      30000.00 EUR   75.00 %   70.00 %   70.00 %    65.00-75.00    -1300.00 EUR
-│   └── Index ETF                               30000.00 EUR
-├── Bonds                                        8000.00 EUR   20.00 %   25.00 %   25.00 %    20.00-30.00    +2250.00 EUR
-│   └── Bond ETF                                 8000.00 EUR
-└── Cash                                         2000.00 EUR    5.00 %    5.00 %    5.00 %      3.75-6.25      +50.00 EUR
-    └── Money Market                             2000.00 EUR
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+asset                        current     now %  target %     post %     5/25 band          invest
+─────────────────────────────────────────────────────────────────────────────────────────────────
+Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %                   +1000.00 EUR
+├── Stocks              30000.00 EUR   75.00 %   70.00 %   70.00 %    65.00-75.00    -1300.00 EUR
+│   └── Index ETF       30000.00 EUR
+├── Bonds                8000.00 EUR   20.00 %   25.00 %   25.00 %    20.00-30.00    +2250.00 EUR
+│   └── Bond ETF         8000.00 EUR
+└── Cash                 2000.00 EUR    5.00 %    5.00 %    5.00 %      3.75-6.25      +50.00 EUR
+    └── Money Market     2000.00 EUR
+─────────────────────────────────────────────────────────────────────────────────────────────────
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
