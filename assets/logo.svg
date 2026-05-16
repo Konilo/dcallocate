@@ -1,12 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
-  <!-- water, uniform level at y=90 -->
-  <rect x="85"  y="90" width="50" height="30" fill="#9ec5f7"/>
-  <rect x="135" y="90" width="45" height="60" fill="#9ec5f7"/>
-  <rect x="180" y="90" width="30" height="80" fill="#9ec5f7"/>
+  <!-- water silhouette as one path; bottom extends 1 unit into the pedestals so the pedestal layer on top hides any shared edge -->
+  <path d="M 85 90 H 210 V 171 H 180 V 151 H 135 V 121 H 85 Z" fill="#9ec5f7"/>
 
-  <!-- pedestals, sorted tallest -> shortest, baseline y=210 -->
-  <rect x="30"  y="45"  width="55" height="165" fill="#1f6dde"/>
-  <rect x="85"  y="120" width="50" height="90"  fill="#1f6dde"/>
-  <rect x="135" y="150" width="45" height="60"  fill="#1f6dde"/>
-  <rect x="180" y="170" width="30" height="40"  fill="#1f6dde"/>
+  <!-- pedestal silhouette as one path; no internal edges, so no subpixel seams between bars -->
+  <path d="M 30 45 H 85 V 120 H 135 V 150 H 180 V 170 H 210 V 210 H 30 Z" fill="#1f6dde"/>
 </svg>
