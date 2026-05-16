@@ -1,4 +1,8 @@
-# :curly_loop: dcallocate
+<p align="center">
+  <img src="assets/logo-wordmark.svg" alt="dcallocate" width="360">
+</p>
+
+---
 
 [![CI](https://github.com/Konilo/dcallocate/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Konilo/dcallocate/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Konilo/dcallocate)](https://github.com/Konilo/dcallocate/releases/latest)
@@ -7,6 +11,8 @@
 - :heavy_dollar_sign: **DCA-friendly rebalancing.** Default mode is **water-filling**: allocate new contributions to under-weighted assets first, no selling, minimizing fees and realized-gains tax. `--allow-selling` switches to a closed-form rebalance for the occasional full reset.
 - :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly — fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
+
+---
 
 Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough to absorb the drift between the assets' current values and their targets, isn't required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant. `dcallocate` covers both halves of a typical investor workflow:
 

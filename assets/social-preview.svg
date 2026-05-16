@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <rect width="1280" height="640" fill="#ffffff"/>
+  <g transform="translate(190, 205) scale(0.957)">
+    <path d="M 85 90 H 210 V 171 H 180 V 151 H 135 V 121 H 85 Z" fill="#9ec5f7"/>
+    <path d="M 30 45 H 85 V 120 H 135 V 150 H 180 V 170 H 210 V 210 H 30 Z" fill="#1f6dde"/>
+    <text x="250" y="174"
+          font-family="DejaVu Sans, sans-serif"
+          font-size="130"
+          font-weight="700"
+          fill="#1f6dde"
+          textLength="660">dcallocate</text>
+  </g>
+</svg>

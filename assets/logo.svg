@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <!-- water silhouette as one path; bottom extends 1 unit into the pedestals so the pedestal layer on top hides any shared edge -->
+  <path d="M 85 90 H 210 V 171 H 180 V 151 H 135 V 121 H 85 Z" fill="#9ec5f7"/>
+
+  <!-- pedestal silhouette as one path; no internal edges, so no subpixel seams between bars -->
+  <path d="M 30 45 H 85 V 120 H 135 V 150 H 180 V 170 H 210 V 210 H 30 Z" fill="#1f6dde"/>
+</svg>
