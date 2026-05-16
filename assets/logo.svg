@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <!-- water, uniform level at y=90 -->
+  <rect x="85"  y="90" width="50" height="30" fill="#9ec5f7"/>
+  <rect x="135" y="90" width="45" height="60" fill="#9ec5f7"/>
+  <rect x="180" y="90" width="30" height="80" fill="#9ec5f7"/>
+
+  <!-- pedestals, sorted tallest -> shortest, baseline y=210 -->
+  <rect x="30"  y="45"  width="55" height="165" fill="#1f6dde"/>
+  <rect x="85"  y="120" width="50" height="90"  fill="#1f6dde"/>
+  <rect x="135" y="150" width="45" height="60"  fill="#1f6dde"/>
+  <rect x="180" y="170" width="30" height="40"  fill="#1f6dde"/>
+</svg>
