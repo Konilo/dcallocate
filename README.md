@@ -8,16 +8,17 @@
 [![Latest release](https://img.shields.io/github/v/release/Konilo/dcallocate)](https://github.com/Konilo/dcallocate/releases/latest)
 [![License](https://img.shields.io/github/license/Konilo/dcallocate)](LICENSE)
 
-- :heavy_dollar_sign: **DCA-friendly rebalancing.** Default mode is **water-filling**: allocate new contributions to under-weighted assets first, no selling, minimizing fees and realized-gains tax. `--allow-selling` switches to a closed-form rebalance for the occasional full reset.
-- :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly — fills a gap PP's own allocation tool doesn't cover.
+- :heavy_dollar_sign: **DCA-friendly rebalancing.** Default mode is **water-filling**: allocate new contributions to under-weighted assets first, no selling, minimizing fees and realized-gains tax. `--allow-selling` enables a full rebalance with selling. A built-in 5/25 rule signals when such a rebalance is actually needed.
+- :jigsaw: Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML directly and fills a gap PP's own allocation tool doesn't cover.
 - :package: Single static binary, **zero third-party dependencies**.
 
 ---
 
-Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax) and, when contributions are large enough to absorb the drift between the assets' current values and their targets, isn't required. PortfolioPerformance has an allocation tool, but only the selling-allowed variant. `dcallocate` covers both halves of a typical investor workflow:
+Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax). When contributions are large enough to absorb the drift between the assets' current values and their targets selling to rebalance is not needed. PortfolioPerformance has an allocation tool, but only for the rebalance-with-selling case. `dcallocate` covers both halves of a typical investor workflow and the bridge between them:
 
-- **Recurring DCA contributions** (e.g., monthly or quarterly): water-filling allocates the cash without sells.
-- **Periodic rebalance** (e.g., annually): `--allow-selling` performs a closed-form rebalance for the case where drift has outgrown what contributions can correct.
+- **Recurring DCA contributions** (e.g., monthly): water-filling allocates the cash without sells.
+- **Knowing when a full rebalance with selling is necessary**: a built-in 5/25 rule flags whether the post-contribution portfolio is balanced enough. When it isn't, that's the signal to re-run with `--allow-selling`.
+- **Rebalancing with selling**: `--allow-selling` performs a full rebalance for the case where drift has outgrown what contributions can correct.
 
 The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
 
