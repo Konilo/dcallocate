@@ -20,7 +20,13 @@ Selling assets to keep a portfolio balanced causes additional costs (order fees,
 - **Knowing when a full rebalance with selling is necessary**: a built-in 5/25 rule flags whether the post-contribution portfolio is balanced enough. When it isn't, that's the signal to re-run with `--allow-selling`.
 - **Rebalancing with selling**: `--allow-selling` performs a full rebalance for the case where drift has outgrown what contributions can correct.
 
-The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others — which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
+The mathematical complexity it handles cleanly: when one or more assets are already over their target weight, those assets receive nothing, and the contribution is distributed among the others, which can in turn push *those* over target, **recursively**. The technique `dcallocate` applies has a couple of names: **rebalancing by investing** (the descriptive English) and **water-filling** (the projection-onto-the-simplex math behind it).
+
+<p align="center">
+  <img src="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities_files/figure-html/fig-demo-case-4-1.png" alt="Water-filling physical analogy" width="700">
+  <br>
+  <em>Source: <a href="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html#fig-demo-case-4">Konilo/sandbox, fig-demo-case-4</a>. See the companion study to understand the case it represents.</em>
+</p>
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
 
