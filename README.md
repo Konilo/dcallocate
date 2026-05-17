@@ -25,7 +25,7 @@ The mathematical complexity it handles cleanly: when one or more assets are alre
 <p align="center">
   <img src="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities_files/figure-html/fig-demo-case-4-1.png" alt="Water-filling physical analogy" width="700">
   <br>
-  <em>Physical representation of water-filling. Source: <a href="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html#fig-demo-case-4">Konilo/sandbox, fig-demo-case-4</a>. See the companion study to understand the case it represents.</em>
+  <em>Physical representation of water-filling.<br>Source: <a href="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html#fig-demo-case-4">Konilo/sandbox, fig-demo-case-4</a>. See the companion study to understand the case it represents.</em>
 </p>
 
 For the full math derivation, correctness proof, and an R reference implementation, see the [companion study](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
