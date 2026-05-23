@@ -2,6 +2,7 @@ package portfolio
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"strconv"
@@ -110,4 +111,120 @@ func parseSegment(seg string) (string, int, error) {
 		return "", 0, fmt.Errorf("segment %q has invalid index", seg)
 	}
 	return name, idx, nil
+}
+
+// normalize rewrites an XPath-format byte stream into an id-format byte stream
+// the existing parser can consume. Two phases over a buffered token stream:
+//
+// Phase A: walk every StartElement, maintain a frame stack, assign each
+// element a synthetic numeric id keyed by its canonical path.
+//
+// Phase B: re-emit every token; on each StartElement, inject id="N", and if
+// the element carries reference="../foo", resolve the XPath against
+// the current stack and replace the value with the target's id.
+//
+// The two-phase split lets phase B rewrite references whose targets are
+// declared later in the document.
+func normalize(r io.Reader) (io.Reader, error) {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("read input: %w", err)
+	}
+
+	pathToID, err := buildPathIndex(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	var out bytes.Buffer
+	enc := xml.NewEncoder(&out)
+	dec := xml.NewDecoder(bytes.NewReader(raw))
+	var stack []frame
+	childCounts := []map[string]int{{}}
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("rewrite decode: %w", err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			name := t.Name.Local
+			childCounts[len(childCounts)-1][name]++
+			idx := childCounts[len(childCounts)-1][name]
+			stack = append(stack, frame{name: name, index: idx})
+			childCounts = append(childCounts, map[string]int{})
+			path := canonicalPath(stack)
+			attrs := []xml.Attr{{Name: xml.Name{Local: "id"}, Value: strconv.Itoa(pathToID[path])}}
+			for _, a := range t.Attr {
+				if a.Name.Local == "reference" {
+					target, err := resolveXPath(a.Value, stack)
+					if err != nil {
+						return nil, fmt.Errorf("reference at offset %d: %w", dec.InputOffset(), err)
+					}
+					id, ok := pathToID[target]
+					if !ok {
+						return nil, fmt.Errorf("XPath reference %q at offset %d does not resolve to any element", a.Value, dec.InputOffset())
+					}
+					a.Value = strconv.Itoa(id)
+				}
+				attrs = append(attrs, a)
+			}
+			t.Attr = attrs
+			if err := enc.EncodeToken(t); err != nil {
+				return nil, fmt.Errorf("rewrite encode: %w", err)
+			}
+		case xml.EndElement:
+			stack = stack[:len(stack)-1]
+			childCounts = childCounts[:len(childCounts)-1]
+			if err := enc.EncodeToken(t); err != nil {
+				return nil, fmt.Errorf("rewrite encode: %w", err)
+			}
+		default:
+			if err := enc.EncodeToken(tok); err != nil {
+				return nil, fmt.Errorf("rewrite encode: %w", err)
+			}
+		}
+	}
+	if err := enc.Flush(); err != nil {
+		return nil, fmt.Errorf("rewrite flush: %w", err)
+	}
+	return &out, nil
+}
+
+// buildPathIndex is phase A: walk every StartElement to assign a synthetic id
+// keyed by its canonical path. The result is a complete path->id map covering
+// every element in the document.
+func buildPathIndex(raw []byte) (map[string]int, error) {
+	pathToID := map[string]int{}
+	dec := xml.NewDecoder(bytes.NewReader(raw))
+	var stack []frame
+	childCounts := []map[string]int{{}}
+	nextID := 1
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("index decode: %w", err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			name := t.Name.Local
+			childCounts[len(childCounts)-1][name]++
+			idx := childCounts[len(childCounts)-1][name]
+			stack = append(stack, frame{name: name, index: idx})
+			childCounts = append(childCounts, map[string]int{})
+			pathToID[canonicalPath(stack)] = nextID
+			nextID++
+		case xml.EndElement:
+			_ = t
+			stack = stack[:len(stack)-1]
+			childCounts = childCounts[:len(childCounts)-1]
+		}
+	}
+	return pathToID, nil
 }

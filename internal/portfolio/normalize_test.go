@@ -6,6 +6,70 @@ import (
 	"testing"
 )
 
+func TestNormalize_RewritesXPathRefs(t *testing.T) {
+	src := `<client>
+<securities><security><name>A</name></security><security><name>B</name></security></securities>
+<taxonomies><taxonomy><name>T</name><root><assignments>
+<assignment><investmentVehicle class="security" reference="../../../../../../securities/security[2]"/></assignment>
+</assignments></root></taxonomy></taxonomies>
+</client>`
+	r, err := normalize(strings.NewReader(src))
+	if err != nil {
+		t.Fatalf("normalize: %v", err)
+	}
+	out, _ := io.ReadAll(r)
+	s := string(out)
+	if strings.Contains(s, `reference="../`) {
+		t.Errorf("XPath reference not rewritten:\n%s", s)
+	}
+	if !strings.Contains(s, `<security id=`) {
+		t.Errorf("security has no id attribute:\n%s", s)
+	}
+	if !strings.Contains(s, `reference="`) {
+		t.Errorf("no numeric reference left after rewrite:\n%s", s)
+	}
+}
+
+func TestNormalize_ForwardReference(t *testing.T) {
+	// Reference appears BEFORE its target in document order. Phase A/B split
+	// must handle this: phase A assigns ids to every element regardless of
+	// declaration order; phase B rewrites refs against the complete map.
+	src := `<client>
+<refs><ref reference="../../targets/t[2]"/></refs>
+<targets><t/><t/></targets>
+</client>`
+	r, err := normalize(strings.NewReader(src))
+	if err != nil {
+		t.Fatalf("normalize: %v", err)
+	}
+	out, _ := io.ReadAll(r)
+	if strings.Contains(string(out), `reference="../`) {
+		t.Errorf("forward XPath reference not rewritten:\n%s", out)
+	}
+}
+
+func TestNormalize_UnresolvableReference(t *testing.T) {
+	src := `<client><a reference="../../nope"/></client>`
+	_, err := normalize(strings.NewReader(src))
+	if err == nil {
+		t.Fatalf("expected error for unresolvable reference")
+	}
+	if !strings.Contains(err.Error(), "does not resolve") {
+		t.Errorf("error %q should mention 'does not resolve'", err)
+	}
+}
+
+func TestNormalize_MalformedReference(t *testing.T) {
+	src := `<client><a reference="../foo["/></client>`
+	_, err := normalize(strings.NewReader(src))
+	if err == nil {
+		t.Fatalf("expected error for malformed reference")
+	}
+	if !strings.Contains(err.Error(), "malformed") {
+		t.Errorf("error %q should mention 'malformed'", err)
+	}
+}
+
 func TestDetectFormat_IDRefs(t *testing.T) {
 	src := `<?xml version="1.0"?>` + "\n" + `<client id="1"><baseCurrency>EUR</baseCurrency></client>`
 	f, r, err := detectFormat(strings.NewReader(src))
