@@ -1,4 +1,4 @@
-// Command dcallocate reads a PortfolioPerformance XML file, takes an amount of
+// Command dcallocate reads a Portfolio Performance XML file, takes an amount of
 // new money to contribute, and prints how to split it across the assets so the
 // portfolio converges toward its target allocation. By default never sells;
 // pass --allow-selling for closed-form rebalancing that may include sells.
@@ -19,7 +19,7 @@ import (
 	"github.com/Konilo/dcallocate/internal/render"
 )
 
-const usageTmpl = `dcallocate — PortfolioPerformance rebalance-by-investing helper.
+const usageTmpl = `dcallocate — Portfolio Performance rebalance-by-investing helper.
 
 Usage:
   dcallocate [flags] <AMOUNT>
@@ -56,7 +56,7 @@ func main() { os.Exit(run(os.Args[1:])) }
 func run(args []string) int {
 	fs := flag.NewFlagSet("dcallocate", flag.ContinueOnError)
 	var (
-		xmlPath     = fs.String("xml", "", "path to the PortfolioPerformance XML file")
+		xmlPath     = fs.String("xml", "", "path to the Portfolio Performance XML file")
 		taxName     = fs.String("taxonomy", "", "taxonomy name to rebalance against (e.g. \"Asset Classes\")")
 		amountF     = fs.Float64("amount", 0, "amount to contribute, in the portfolio's base currency")
 		asJSON      = fs.Bool("json", false, "emit JSON instead of the pretty tree")
@@ -147,7 +147,7 @@ func run(args []string) int {
 		}
 		fmt.Fprintln(os.Stderr, "First run: please provide xml path and taxonomy. Use --save-config to remember.")
 		if *xmlPath == "" {
-			*xmlPath = promptLine("Path to PortfolioPerformance XML: ")
+			*xmlPath = promptLine("Path to Portfolio Performance XML: ")
 		}
 		if *taxName == "" {
 			*taxName = promptLine("Taxonomy name (e.g. Asset Classes): ")

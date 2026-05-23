@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// PortfolioPerformance fixed-point scales.
+// Portfolio Performance fixed-point scales.
 const (
 	amountScale = 100     // <amount> stored × 1e2 (cents)
 	sharesScale = 1e8     // <shares> stored × 1e8
@@ -36,7 +36,7 @@ func (e *TaxonomyNotFoundError) Error() string {
 	return fmt.Sprintf("taxonomy %q not found; available: %v", e.Want, e.Available)
 }
 
-// Parse reads a PortfolioPerformance XML file at xmlPath and returns the
+// Parse reads a Portfolio Performance XML file at xmlPath and returns the
 // rendered tree for the named taxonomy. Warnings (stale prices, etc.) are
 // written to stderr; only fatal problems return an error.
 //
@@ -311,7 +311,7 @@ func buildNode(tn *taxonomyNodeXML, parentTarget float64,
 }
 
 // latestPrice returns (price-per-unit, date) for the most recent quote with
-// t <= today, mirroring PortfolioPerformance's Security.getSecurityPrice():
+// t <= today, mirroring Portfolio Performance's Security.getSecurityPrice():
 // prefer <latest> when it is on-or-after the newest <prices>/<price> entry,
 // otherwise use that newest <price>. Price is in the security's currency,
 // which the caller has already verified equals the portfolio base currency.

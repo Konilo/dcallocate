@@ -9,12 +9,12 @@
 [![License](https://img.shields.io/github/license/Konilo/dcallocate)](LICENSE)
 
 - **DCA-friendly, low-cost rebalancing.** The default mode is water-filling: allocate new contributions to underweight assets first, no selling, minimizing fees and realized-gains tax. `--allow-selling` enables a full rebalance with selling. A built-in 5/25 rule signals when such a rebalance is actually needed.
-- **Reads [PortfolioPerformance](https://www.portfolio-performance.info/) XML** directly (read-only) and fills a gap PP's own allocation tool doesn't cover.
+- **Reads [Portfolio Performance](https://www.portfolio-performance.info/) XML** directly (read-only) and fills a gap PP's own allocation tool doesn't cover.
 - Single static binary, **zero third-party dependencies**, no network access or subprocess.
 
 ---
 
-Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax). When contributions are large enough to absorb the drift between the assets' current values and their targets, selling to rebalance is not needed. PortfolioPerformance has an allocation tool, but only for the rebalance-with-selling case. `dcallocate` covers both halves of a typical DCA investor workflow and the bridge between them:
+Selling assets to keep a portfolio balanced causes additional costs (order fees, realized-gains tax). When contributions are large enough to absorb the drift between the assets' current values and their targets, selling to rebalance is not needed. Portfolio Performance has an allocation tool, but only for the rebalance-with-selling case. `dcallocate` covers both halves of a typical DCA investor workflow and the bridge between them:
 
 1. **Recurring DCA contributions** (e.g., monthly): water-filling allocates the cash without sells.
 2. **Knowing when a full rebalance with selling is necessary**: a built-in 5/25 rule flags whether the post-contribution portfolio is balanced enough. When it isn't, that's the signal to re-run with `--allow-selling`.
@@ -50,7 +50,7 @@ dcallocate --xml /path/to/portfolio.xml --taxonomy "Asset Classes" --save-config
 dcallocate 1000
 ```
 
-Output is a tree showing every taxonomy node with (i) roll-up totals at inner nodes (so you see "wire X € to your broker" via the parent of the children that need the money) and (ii), for visibility, the underlying securities/accounts that make up each taxonomy leaf. (See the [PortfolioPerformance taxonomies docs](https://help.portfolio-performance.info/en/reference/view/taxonomies/) for background.)
+Output is a tree showing every taxonomy node with (i) roll-up totals at inner nodes (so you see "wire X € to your broker" via the parent of the children that need the money) and (ii), for visibility, the underlying securities/accounts that make up each taxonomy leaf. (See the [Portfolio Performance taxonomies docs](https://help.portfolio-performance.info/en/reference/view/taxonomies/) for background.)
 
 ```
 asset                        current     now %  target %     post %     5/25 band          invest
@@ -128,7 +128,7 @@ Per-asset `invest` values can be negative ("sell that much") and the sum of `inv
 
 | Flag               | Meaning                                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------------------- |
-| `--xml PATH`       | path to your PortfolioPerformance XML                                                                   |
+| `--xml PATH`       | path to your Portfolio Performance XML                                                                   |
 | `--taxonomy NAME`  | which taxonomy holds the targets (e.g., `"Asset Classes"`)                                              |
 | `--amount EUR`     | amount to contribute, in the portfolio's base currency (or pass it positionally: `dcallocate 1000`)     |
 | `--save-config`    | persist `--xml` and `--taxonomy` for next time                                                          |
@@ -199,9 +199,9 @@ Some $x_i$ values may be negative, but $\sum_i x_i = C$. Every leaf lands exactl
 
 For the full derivation, correctness proof, and an R reference implementation, see the [Portfolio Contribution Complexities](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) companion study.
 
-## PortfolioPerformance file format
+## Portfolio Performance file format
 
-`dcallocate` was tested against PortfolioPerformance **v0.83.2** (the latest stable release at time of writing). Earlier versions probably work too as the relevant XML schema (XStream-serialised) has been stable for years.
+`dcallocate` was tested against Portfolio Performance **v0.83.2** (the latest stable release at time of writing). Earlier versions probably work too as the relevant XML schema (XStream-serialised) has been stable for years.
 
 The parser maps PP's XML elements as follows:
 
@@ -225,7 +225,7 @@ The [parser](#how-it-works) handles two PP-specific quirks:
 
 - **Single base currency only.** The portfolio's `<baseCurrency>` (e.g., EUR, USD, GBP) is honoured throughout. A security or account in a *different* currency than the portfolio base aborts parsing with a clear error. FX conversion is out of scope.
 - **Stale prices.** If a held security's most recent price is older than 7 days, you get a (non-blocking) stderr warning.
-- **Unknown PP transaction types.** PortfolioPerformance's vocabulary is allow-listed. An unrecognised type aborts with a clear error rather than silently miscount. Please file an issue if you hit one.
+- **Unknown PP transaction types.** Portfolio Performance's vocabulary is allow-listed. An unrecognised type aborts with a clear error rather than silently miscount. Please file an issue if you hit one.
 - **Securities/accounts must be assigned to taxonomy leaf nodes.** A security or account assigned to an inner taxonomy node aborts parsing with a clear error. It would otherwise be silently excluded from totals and from the water-filling algorithm. To hold a broad asset that spans several subcategories, give it a dedicated leaf node under the relevant parent, with its own target weight.
 
 ## Development

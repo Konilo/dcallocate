@@ -6,7 +6,7 @@ sessions should *not* silently undo.
 
 ## Project shape
 
-Single-binary Go CLI. Reads a PortfolioPerformance XML file, runs water-filling
+Single-binary Go CLI. Reads a Portfolio Performance XML file, runs water-filling
 allocation under the no-selling constraint, prints a tree.
 
 ```
@@ -57,7 +57,7 @@ GitHub Actions workflow does the same on `v*` tag push.
   off-base-currency securities, dangling references, weight sums far from 1 —
   all return errors with specific context. No best-effort fallbacks.
 
-## XML quirks (PortfolioPerformance / XStream serialization)
+## XML quirks (Portfolio Performance / XStream serialization)
 
 - Each object is declared once with `id="N"` and referenced thereafter as
   `<element reference="N"/>`. The cash-side counterpart of a BUY is declared
