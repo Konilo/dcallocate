@@ -224,7 +224,7 @@ The [parser](#how-it-works) handles two PP-specific quirks:
 ## Deliberate design choices & limitations
 
 - **Single base currency only.** The portfolio's `<baseCurrency>` (e.g., EUR, USD, GBP) is honoured throughout. A security or account in a *different* currency than the portfolio base aborts parsing with a clear error. FX conversion is out of scope.
-- **Stale prices.** If the latest `<price>` for a held security is older than 7 days, you get a (non-blocking) stderr warning.
+- **Stale prices.** If a held security's most recent price is older than 7 days, you get a (non-blocking) stderr warning.
 - **Unknown PP transaction types.** PortfolioPerformance's vocabulary is allow-listed. An unrecognised type aborts with a clear error rather than silently miscount. Please file an issue if you hit one.
 - **Securities/accounts must be assigned to taxonomy leaf nodes.** A security or account assigned to an inner taxonomy node aborts parsing with a clear error. It would otherwise be silently excluded from totals and from the water-filling algorithm. To hold a broad asset that spans several subcategories, give it a dedicated leaf node under the relevant parent, with its own target weight.
 
