@@ -1,4 +1,4 @@
-// Package portfolio parses a PortfolioPerformance XML file and exposes a tree
+// Package portfolio parses a Portfolio Performance XML file and exposes a tree
 // of taxonomy nodes + leaf assignments with their current values and target
 // weights.
 package portfolio
