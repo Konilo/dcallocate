@@ -15,7 +15,7 @@ const (
 	amountScale = 100     // <amount> stored × 1e2 (cents)
 	sharesScale = 1e8     // <shares> stored × 1e8
 	priceScale  = 1e8     // <price v> stored × 1e8 per unit
-	weightScale = 10000.0 // classification/assignment <weight> stored as basis-points-of-parent
+	weightScale = 10000.0 // taxonomy-node/assignment <weight> stored as basis-points-of-parent
 )
 
 // StalePriceWarnDays is the threshold (in days) beyond which we emit a stale-price
@@ -236,22 +236,21 @@ func collectFromAcctTx(tx *accountTxXML, m map[string]*accountTxXML, ptxs *[]*po
 	}
 }
 
-func buildNode(c *classificationXML, parentTarget float64,
+func buildNode(tn *taxonomyNodeXML, parentTarget float64,
 	valBySec, cashByAcct map[string]float64,
 	secByID map[string]*securityXML, acctByID map[string]*accountXML) (*Node, error) {
 
-	ownTarget := parentTarget * float64(c.Weight) / weightScale
-	n := &Node{Name: c.Name, Target: ownTarget}
+	ownTarget := parentTarget * float64(tn.Weight) / weightScale
+	n := &Node{Name: tn.Name, Target: ownTarget}
 
-	// Inner classification: recurse into child classifications. Assignments
-	// on a non-leaf classification are rejected: dcallocate operates on
-	// leaf classifications only, so a security or account hanging off such
-	// a classification would be silently excluded from totals and from the
-	// allocation solve.
-	if len(c.Children.Items) > 0 {
-		if len(c.Assignments.Items) > 0 {
+	// Non-leaf taxonomy node: recurse into children. Assignments on a
+	// non-leaf node are rejected: dcallocate operates on taxonomy leaves
+	// only, so a security or account hanging off such a node would be
+	// silently excluded from totals and from the allocation solve.
+	if len(tn.Children.Items) > 0 {
+		if len(tn.Assignments.Items) > 0 {
 			var names []string
-			for _, a := range c.Assignments.Items {
+			for _, a := range tn.Assignments.Items {
 				switch a.InvestmentVehicle.Class {
 				case "security":
 					if s := secByID[a.InvestmentVehicle.Reference]; s != nil {
@@ -269,11 +268,11 @@ func buildNode(c *classificationXML, parentTarget float64,
 					names = append(names, fmt.Sprintf("<%s %s>", a.InvestmentVehicle.Class, a.InvestmentVehicle.Reference))
 				}
 			}
-			return nil, fmt.Errorf("non-leaf classification %q has %d assignment(s): %s; dcallocate requires assignments to sit on leaf classifications. Add a child classification under %q (with its own target weight) to hold them",
-				c.Name, len(names), strings.Join(names, ", "), c.Name)
+			return nil, fmt.Errorf("non-leaf taxonomy node %q has %d assignment(s): %s; dcallocate requires assignments to sit on taxonomy leaves. Add a child node under %q (with its own target weight) to hold them",
+				tn.Name, len(names), strings.Join(names, ", "), tn.Name)
 		}
-		for i := range c.Children.Items {
-			child, err := buildNode(&c.Children.Items[i], ownTarget, valBySec, cashByAcct, secByID, acctByID)
+		for i := range tn.Children.Items {
+			child, err := buildNode(&tn.Children.Items[i], ownTarget, valBySec, cashByAcct, secByID, acctByID)
 			if err != nil {
 				return nil, err
 			}
@@ -282,10 +281,10 @@ func buildNode(c *classificationXML, parentTarget float64,
 		return n, nil
 	}
 
-	// Leaf classification: collect underlying assignments and sum their
-	// values into Current. The classification's own target is used as-is —
-	// no per-assignment splitting.
-	for _, a := range c.Assignments.Items {
+	// Taxonomy leaf: collect underlying assignments and sum their values
+	// into Current. The leaf's own target is used as-is, no per-assignment
+	// splitting.
+	for _, a := range tn.Assignments.Items {
 		var asg Assignment
 		switch a.InvestmentVehicle.Class {
 		case "security":
@@ -481,10 +480,10 @@ type taxonomiesXML struct {
 
 type taxonomyXML struct {
 	Name string            `xml:"name"`
-	Root classificationXML `xml:"root"`
+	Root taxonomyNodeXML `xml:"root"`
 }
 
-type classificationXML struct {
+type taxonomyNodeXML struct {
 	ID          string         `xml:"id,attr"`
 	Reference   string         `xml:"reference,attr"`
 	Name        string         `xml:"name"`
@@ -494,7 +493,7 @@ type classificationXML struct {
 }
 
 type childrenXML struct {
-	Items []classificationXML `xml:"classification"`
+	Items []taxonomyNodeXML `xml:"classification"`
 }
 
 type assignmentsXML struct {

@@ -166,7 +166,7 @@ func run(args []string) int {
 		fmt.Fprintln(os.Stderr, "config saved to", cfgPath)
 	}
 
-	// Parse XML → tree of classifications with current / target on leaves.
+	// Parse XML → tree of taxonomy nodes with current / target on leaves.
 	tree, err := portfolio.Parse(*xmlPath, *taxName)
 	if err != nil {
 		var tnf *portfolio.TaxonomyNotFoundError
@@ -182,7 +182,7 @@ func run(args []string) int {
 		return 1
 	}
 
-	// Run water-filling at the leaf-classification level.
+	// Run water-filling at the taxonomy-leaf level.
 	leaves := tree.Leaves()
 	assets := make([]allocator.Asset, len(leaves))
 	for i, l := range leaves {

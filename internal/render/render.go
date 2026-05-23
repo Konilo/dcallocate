@@ -257,7 +257,7 @@ func Tree(w io.Writer, root *portfolio.Node, amount float64, color, bandCheck bo
 			return
 		}
 
-		// Leaf classification: render its underlying assignments as visual
+		// Taxonomy leaf: render its underlying assignments as visual
 		// children. Assignments share the leaf's stuck status (display-only,
 		// not allocated independently), so the whole assignment row follows
 		// n.Stuck. Continuation columns above are unchanged.
