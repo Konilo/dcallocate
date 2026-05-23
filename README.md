@@ -28,8 +28,6 @@ The mathematical complexity it handles for you: when one or more assets are alre
   <em>Physical representation of water-filling.<br>Cf. the companion study to understand the case it represents.<br>Source: <a href="https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html#fig-demo-case-4">Konilo/sandbox, Portfolio Contribution Complexities, Figure 4</a>.</em>
 </p>
 
-For the full math explanation and an R reference implementation, see the [companion study](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) in [Konilo/sandbox](https://github.com/Konilo/sandbox).
-
 ## Install
 
 Download the right binary from the [latest release](https://github.com/Konilo/dcallocate/releases) and put it on your `PATH`:
