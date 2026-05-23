@@ -37,10 +37,10 @@ Download the right binary from the [latest release](https://github.com/Konilo/dc
 | OS                    | Binary                         | Where to put it                                                                          |
 | --------------------- | ------------------------------ | ---------------------------------------------------------------------------------------- |
 | Windows               | `dcallocate-windows-amd64.exe` | rename to `dcallocate.exe`, drop in `%USERPROFILE%\bin\` (and ensure that's on `PATH`)   |
-| Linux (x86_64)        | `dcallocate-linux-amd64`       | `~/.local/bin/dcallocate`, `chmod +x`                                                    |
-| Linux (arm64)         | `dcallocate-linux-arm64`       | idem                                                                                      |
-| macOS (Apple Silicon) | `dcallocate-darwin-arm64`      | idem                                                     |
-| macOS (Intel)         | `dcallocate-darwin-amd64`      | idem                                                                                      |
+| Linux (x86_64)        | `dcallocate-linux-amd64`       | `~/.local/bin/dcallocate`, `chmod +x` |
+| Linux (arm64)         | `dcallocate-linux-arm64`       | ditto |
+| macOS (Apple Silicon) | `dcallocate-darwin-arm64`      | ditto |
+| macOS (Intel)         | `dcallocate-darwin-amd64`      | ditto |
 
 ## Usage
 
@@ -52,7 +52,7 @@ dcallocate --xml /path/to/portfolio.xml --taxonomy "Asset Classes" --save-config
 dcallocate 1000
 ```
 
-Output is a tree showing every taxonomy node — including roll-up totals at inner nodes (so you see "wire X € to your broker" via the parent of the children that need the money) plus, for visibility, the underlying securities/accounts that make up each leaf class:
+Output is a tree showing every taxonomy node with (i) roll-up totals at inner nodes (so you see "wire X € to your broker" via the parent of the children that need the money) and (ii), for visibility, the underlying securities/accounts that make up each taxonomy leaf. (See the [PortfolioPerformance taxonomies docs](https://help.portfolio-performance.info/en/reference/view/taxonomies/) for background.)
 
 ```
 asset                        current     now %  target %     post %     5/25 band          invest
@@ -68,20 +68,18 @@ Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %              
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
-The `—` in the `invest` column marks **stuck** classes which are already at or over their target after the contribution lands and, thus, receive nothing. Note that, pre-contribution, `Cash` is exactly at its target percentage but still gets stuck: once `Stocks` (the most-overweight class) is excluded from receiving funds, the remaining contribution gets redistributed proportionally among `Bonds` and `Cash`, and `Cash`'s renormalised share of the contribution ($1000 \times 0.05 / (0.05 + 0.25) = ~167\text{ }€$) would push it above its post-contribution target value ($2167\text{ }€ > 41000 * 0.05 = 2050\text{ }€$) which amounts to a sell. So `Cash` is stuck too, as per the water-filling logic, and all 1000 € ends up in `Bonds`. (Cf. the [Water-filling mode](#water-filling-mode) section for a more precise explanation of the algorithm.)
-
-More information about PP taxonomies [here](https://help.portfolio-performance.info/en/reference/view/taxonomies/).
+The `—` in the `invest` column marks **stuck** taxonomy nodes that receive nothing because they are already at or over their target. Note that, pre-contribution, `Cash` is exactly at its target percentage (5 % of 40000 € = 2000 €) yet still gets stuck. Once `Stocks` (the most-overweight leaf) is excluded, water-filling has to bring `Bonds` and `Cash` to a combined post-contribution value of 11000 € (their current 10000 € plus the 1000 € contribution), split proportionally to their renormalised target weights (25/30 for `Bonds`, 5/30 for `Cash`). Cash's renormalised target value is therefore $11000 \times 5/30 \approx 1833\text{ }€$, *below* its current 2000 €: reaching it would require selling about 167 € of `Cash`, which the no-selling rule forbids. So `Cash` is stuck too, and the full 1000 € ends up in `Bonds`. (Cf. the [Water-filling mode](#water-filling-mode) section for the precise statement of the algorithm.)
 
 ### The 5/25 rule check
 
-The `post %` and `5/25 band` columns tell you whether water-filling alone is keeping the portfolio close enough to its targets. The band for each class is the tighter of:
+The `post %` and `5/25 band` columns tell you whether water-filling alone is keeping the portfolio close enough to its targets. The band for each taxonomy node is the tighter of:
 
 - **absolute** ±5 percentage points around the target, and
 - **relative** ±25 % of the target (binding for targets below 20 %).
 
 This is Larry Swedroe's **5/25 rule**, cf. the [Bogleheads wiki](https://www.bogleheads.org/wiki/Rebalancing#cite_note-5/25-1).
 
-When the post-contribution share of any taxonomy node falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal). Here Stocks have drifted down to 55 % (well below the 65-75 % band) and Bonds up to 40 % (above the 20-30 % band); the contribution can only buy more Stocks but not enough to absorb the drift:
+When the post-contribution share of any taxonomy node falls outside its band, a warning is printed under the table (and the breaching rows are coloured red on a colour-capable terminal). Here `Stocks` have drifted down to 56.10 % (well below the 65-75 % band) and `Bonds` up to 39.02 % (above the 20-30 % band). The contribution can only buy more `Stocks`, but not enough to absorb the drift:
 
 ```
 asset                        current     now %  target %     post %     5/25 band          invest
@@ -102,7 +100,7 @@ A breach means your monthly contribution is no longer big enough to absorb the d
 
 Pass `dcallocate --amount 0` (or just `dcallocate 0`) to see the band check against the current portfolio without simulating any contribution.
 
-Pass `--no-band-check` to hide the two extra columns and the warning (e.g., for a narrower terminal or scripted use).
+Pass `--no-band-check` to hide the two extra columns and the warning (e.g., for a narrower terminal).
 
 ### Allowing selling
 
@@ -183,23 +181,23 @@ sequenceDiagram
 ## The math
 
 Inputs:
-- $c_i$ = current value of leaf class $i$ (in base currency)
+- $c_i$ = current value of taxonomy leaf $i$ (in base currency)
 - $t_i$ = target weight of leaf $i$ (fractions sum to 1)
 - $C$ = contribution amount, $C \ge 0$
 
 ### Water-filling mode
 
-Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass, for every leaf class $i$ not yet stuck, compute $x_i$, the amount it should receive from the contribution:
+Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass, for every leaf $i$ not yet stuck, compute $x_i$, the amount it should receive from the contribution:
 
 $$x_i = \frac{t_i}{\sum_{j \in \text{non-stuck}} t_j} \cdot \left(V - \sum_{k \in \text{stuck}} c_k\right) - c_i$$
 
-If any $x_i < 0$, mark those leaf classes as stuck (i.e., force $x_i := 0$) and repeat. Considering $N$ leaf classes, the algorithm terminates in at most $N$ passes as one leaf class gets stuck per pass or the loop exits.
+If any $x_i < 0$, mark those leaves as stuck (i.e., force $x_i := 0$) and repeat. Considering $N$ leaves, the algorithm terminates in at most $N$ passes: each non-terminal pass marks at least one leaf as stuck.
 
 ### `--allow-selling` mode (closed-form)
 
 $$x_i = t_i \cdot \left(\sum_j c_j + C\right) - c_i \qquad \forall\, i$$
 
-Some $x_i$ values may be negative, but $\sum_i x_i = C$. Every asset class lands exactly on its target weight in one pass.
+Some $x_i$ values may be negative, but $\sum_i x_i = C$. Every leaf lands exactly on its target weight in one pass.
 
 For the full derivation, correctness proof, and an R reference implementation, see the [Portfolio Contribution Complexities](https://konilo.github.io/sandbox/sandbox/portfolio_contribution_complexities/portfolio_contribution_complexities.html) companion study.
 
@@ -215,7 +213,7 @@ The parser maps PP's XML elements as follows:
 | `<securities>` → `<security>`                        | Each holding's identity, currency, and historical prices.                             |
 | `<accounts>` → `<account>`                           | Each cash account's identity, currency, and transaction history.                      |
 | `<taxonomies>` → `<taxonomy name="...">`             | Named taxonomy. What `dcallocate` searches for based on `--taxonomy NAME`.            |
-| `<classification>` → `<weight>`                      | Target weight of each taxonomy node (which PP calls classification), as basis-points-of-parent (10000 = 100 %).       |
+| `<classification>` → `<weight>`                      | Target weight of each taxonomy node (which PP calls classification).                  |
 | `<assignment>` → `<investmentVehicle class="...">`   | Which security or account belongs to a taxonomy node.                                 |
 | `<portfolio-transaction>` (BUY / SELL / TRANSFER_*)  | Aggregated to compute current share count per security.                               |
 | `<account-transaction>` (DEPOSIT / DIVIDEND / ...)   | Aggregated to compute current cash balance per account.                               |
@@ -230,7 +228,7 @@ The [parser](#how-it-works) handles two PP-specific quirks:
 - **Single base currency only.** The portfolio's `<baseCurrency>` (e.g., EUR, USD, GBP) is honoured throughout. A security or account in a *different* currency than the portfolio base aborts parsing with a clear error. FX conversion is out of scope.
 - **Stale prices.** If the latest `<price>` for a held security is older than 7 days, you get a (non-blocking) stderr warning.
 - **Unknown PP transaction types.** PortfolioPerformance's vocabulary is allow-listed. An unrecognised type aborts with a clear error rather than silently miscount. Please file an issue if you hit one.
-- **Minor currency amount discrepancy vs. PP's UI.** PP prefers the `<latest>` element (sometimes intraday) over the last `<prices>/<price>` entry. `dcallocate` tool uses the latter for `current`. `now %` and `target %` match PP exactly, only the absolute amounts drift marginally.
+- **Minor currency amount discrepancy vs. PP's UI.** PP prefers the `<latest>` element (sometimes intraday) over the last `<prices>/<price>` entry. `dcallocate` uses the latter for `current`. `now %` and `target %` match PP exactly, only the absolute amounts drift marginally.
 
 ## Development
 
