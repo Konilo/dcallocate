@@ -216,11 +216,6 @@ The parser maps PP's XML elements as follows:
 | `<portfolio-transaction>` (BUY / SELL / TRANSFER_*)  | Aggregated to compute current share count per security.                               |
 | `<account-transaction>` (DEPOSIT / DIVIDEND / ...)   | Aggregated to compute current cash balance per account.                               |
 
-The [parser](#how-it-works) handles two PP-specific quirks:
-
-1. **`id` / `reference` cross-linking**: PP's XStream serializer declares each object once with `id="N"` and refers to it elsewhere as `<element reference="N"/>`. The parser resolves these globally.
-2. **Fixed-point integers**: `<amount>` is stored × 100 (cents), `<shares>` and `<price v=>` × 1e8, `<weight>` × 10000. All conversions are managed by [internal/portfolio/parse.go](internal/portfolio/parse.go).
-
 ## Deliberate design choices & limitations
 
 - **Single base currency only.** The portfolio's `<baseCurrency>` (e.g., EUR, USD, GBP) is honoured throughout. A security or account in a *different* currency than the portfolio base aborts parsing with a clear error. FX conversion is out of scope.
