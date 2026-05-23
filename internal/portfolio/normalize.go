@@ -221,7 +221,6 @@ func buildPathIndex(raw []byte) (map[string]int, error) {
 			pathToID[canonicalPath(stack)] = nextID
 			nextID++
 		case xml.EndElement:
-			_ = t
 			stack = stack[:len(stack)-1]
 			childCounts = childCounts[:len(childCounts)-1]
 		}
