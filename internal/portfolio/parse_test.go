@@ -193,6 +193,35 @@ func TestParse_BadWeightSum(t *testing.T) {
 	}
 }
 
+func TestParse_AssignmentOnNonLeafClassification(t *testing.T) {
+	// Attach a security assignment to the root classification (which has
+	// children) — dcallocate must reject this rather than silently dropping
+	// the security from totals and the allocation solve.
+	xmlText := strings.Replace(
+		readFile(t, "../../testdata/portfolio_min.xml"),
+		"<assignments/>",
+		`<assignments>
+          <assignment>
+            <investmentVehicle class="security" reference="1"/>
+            <weight>10000</weight>
+            <rank>0</rank>
+          </assignment>
+        </assignments>`,
+		1,
+	)
+	today, _ := time.Parse("2006-01-02", fixtureToday)
+	_, err := ParseReaderAt(strings.NewReader(xmlText), "Asset Classes", today)
+	if err == nil {
+		t.Fatalf("expected error for assignment on non-leaf classification, got nil")
+	}
+	msg := err.Error()
+	for _, want := range []string{"non-leaf", "Asset Classes", "SecA"} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("error %q should mention %q", msg, want)
+		}
+	}
+}
+
 func readFile(t *testing.T, path string) string {
 	t.Helper()
 	b, err := os.ReadFile(path)

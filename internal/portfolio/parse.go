@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -190,7 +191,10 @@ func buildTree(c *clientXML, taxonomyName string, today time.Time) (*Node, error
 	}
 
 	// Build the rendered tree.
-	root := buildNode(&tax.Root, 1.0, valBySec, cashByAcct, secByID, acctByID)
+	root, err := buildNode(&tax.Root, 1.0, valBySec, cashByAcct, secByID, acctByID)
+	if err != nil {
+		return nil, err
+	}
 	root.BaseCurrency = baseCurrency
 
 	// Sanity-check: leaf targets sum to 1.0 (within tolerance).
@@ -234,20 +238,48 @@ func collectFromAcctTx(tx *accountTxXML, m map[string]*accountTxXML, ptxs *[]*po
 
 func buildNode(c *classificationXML, parentTarget float64,
 	valBySec, cashByAcct map[string]float64,
-	secByID map[string]*securityXML, acctByID map[string]*accountXML) *Node {
+	secByID map[string]*securityXML, acctByID map[string]*accountXML) (*Node, error) {
 
 	ownTarget := parentTarget * float64(c.Weight) / weightScale
 	n := &Node{Name: c.Name, Target: ownTarget}
 
-	// Inner classification: recurse into child classifications. Direct
-	// assignments on a non-leaf classification are unusual; we ignore them
-	// (PP's UI typically doesn't allow this) but don't error on it.
+	// Inner classification: recurse into child classifications. Assignments
+	// on a non-leaf classification are rejected: dcallocate operates on
+	// leaf classifications only, so a security or account hanging off such
+	// a classification would be silently excluded from totals and from the
+	// allocation solve.
 	if len(c.Children.Items) > 0 {
+		if len(c.Assignments.Items) > 0 {
+			var names []string
+			for _, a := range c.Assignments.Items {
+				switch a.InvestmentVehicle.Class {
+				case "security":
+					if s := secByID[a.InvestmentVehicle.Reference]; s != nil {
+						names = append(names, fmt.Sprintf("%s (security)", s.Name))
+					} else {
+						names = append(names, fmt.Sprintf("<missing security %s>", a.InvestmentVehicle.Reference))
+					}
+				case "account":
+					if a2 := acctByID[a.InvestmentVehicle.Reference]; a2 != nil {
+						names = append(names, fmt.Sprintf("%s (account)", a2.Name))
+					} else {
+						names = append(names, fmt.Sprintf("<missing account %s>", a.InvestmentVehicle.Reference))
+					}
+				default:
+					names = append(names, fmt.Sprintf("<%s %s>", a.InvestmentVehicle.Class, a.InvestmentVehicle.Reference))
+				}
+			}
+			return nil, fmt.Errorf("non-leaf classification %q has %d assignment(s): %s; dcallocate requires assignments to sit on leaf classifications. Add a child classification under %q (with its own target weight) to hold them",
+				c.Name, len(names), strings.Join(names, ", "), c.Name)
+		}
 		for i := range c.Children.Items {
-			child := buildNode(&c.Children.Items[i], ownTarget, valBySec, cashByAcct, secByID, acctByID)
+			child, err := buildNode(&c.Children.Items[i], ownTarget, valBySec, cashByAcct, secByID, acctByID)
+			if err != nil {
+				return nil, err
+			}
 			n.Children = append(n.Children, child)
 		}
-		return n
+		return n, nil
 	}
 
 	// Leaf classification: collect underlying assignments and sum their
@@ -276,7 +308,7 @@ func buildNode(c *classificationXML, parentTarget float64,
 		n.Assignments = append(n.Assignments, asg)
 		n.Current += asg.Current
 	}
-	return n
+	return n, nil
 }
 
 // latestPrice returns (price-per-unit, date) for the most recent <price t v/>
