@@ -162,7 +162,7 @@ sequenceDiagram
     opt --save-config
         main->>config: Save()
     end
-    main->>portfolio: Parse(xml, taxonomy) — read PP XML, build taxonomy tree
+    main->>portfolio: Parse(xml, taxonomy) — read PP XML (auto-handle id-ref or xpath-ref format), build taxonomy tree
     portfolio-->>main: tree (leaves carry Current, Target)
     main->>allocator: Allocate(leaves, amount)<br/>or AllocateWithSelling
     allocator-->>main: per-leaf Investment + Stuck
