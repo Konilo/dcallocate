@@ -12,7 +12,7 @@ allocation under the no-selling constraint, prints a tree.
 ```
 cmd/dcallocate/main.go          # CLI glue (flag parsing, prompts, render selection)
 internal/allocator/             # pure water-filling math; no I/O; fully unit-tested
-internal/portfolio/             # XML parser → tree of classifications + assignments
+internal/portfolio/             # XML parser → tree of taxonomy nodes + assignments
 internal/render/                # tree pretty-print + JSON
 internal/config/                # JSON persistence under os.UserConfigDir()
 testdata/portfolio_min.xml      # hand-trimmed PP fixture (~50 lines)
@@ -36,11 +36,16 @@ GitHub Actions workflow does the same on `v*` tag push.
 
 ## Invariants — preserve these, don't re-litigate
 
-- **Allocation granularity is the leaf classification, not the assignment.**
-  When a leaf classification has multiple assignments (e.g. one classification
-  pointing at two ETFs), the classification's target is *not* split among
-  them. Assignments are displayed for context only. By design, automatic
-  splitting is not done — the operator chooses which security to actually buy.
+- **Allocation granularity is the taxonomy leaf, not the assignment.**
+  When a leaf has multiple assignments (e.g. one node pointing at two ETFs),
+  the leaf's target is *not* split among them. Assignments are displayed for
+  context only. By design, automatic splitting is not done — the operator
+  chooses which security to actually buy.
+- **Terminology: PP's "classification" is reserved for the XML schema boundary.**
+  Everywhere else (code, errors, comments, README, CLI output, this file),
+  the conceptual vocabulary is `taxonomy node` (any node) and `taxonomy leaf`
+  (terminal node). PP's term survives only in `xml:"classification"` field
+  tags and in PP-doc hyperlinks. Don't reintroduce it elsewhere.
 - **Default never sells.** `x_i ≥ 0` is a hard constraint of the water-filling
   algorithm in `allocator.Allocate`. The opt-in `--allow-selling` flag uses
   `allocator.AllocateWithSelling`, a closed-form rebalance that permits negative

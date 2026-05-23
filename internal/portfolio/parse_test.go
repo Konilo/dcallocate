@@ -42,7 +42,7 @@ func TestParse_Tree(t *testing.T) {
 		t.Fatalf("root has %d children, want 2", got)
 	}
 	if tree.Children[0].Name != "Stocks" || tree.Children[1].Name != "Cash" {
-		t.Errorf("classifications: got [%s, %s], want [Stocks, Cash]",
+		t.Errorf("taxonomy nodes: got [%s, %s], want [Stocks, Cash]",
 			tree.Children[0].Name, tree.Children[1].Name)
 	}
 }
@@ -193,9 +193,9 @@ func TestParse_BadWeightSum(t *testing.T) {
 	}
 }
 
-func TestParse_AssignmentOnNonLeafClassification(t *testing.T) {
-	// Attach a security assignment to the root classification (which has
-	// children) — dcallocate must reject this rather than silently dropping
+func TestParse_AssignmentOnNonLeafNode(t *testing.T) {
+	// Attach a security assignment to the root taxonomy node (which has
+	// children). dcallocate must reject this rather than silently dropping
 	// the security from totals and the allocation solve.
 	xmlText := strings.Replace(
 		readFile(t, "../../testdata/portfolio_min.xml"),
@@ -212,7 +212,7 @@ func TestParse_AssignmentOnNonLeafClassification(t *testing.T) {
 	today, _ := time.Parse("2006-01-02", fixtureToday)
 	_, err := ParseReaderAt(strings.NewReader(xmlText), "Asset Classes", today)
 	if err == nil {
-		t.Fatalf("expected error for assignment on non-leaf classification, got nil")
+		t.Fatalf("expected error for assignment on non-leaf taxonomy node, got nil")
 	}
 	msg := err.Error()
 	for _, want := range []string{"non-leaf", "Asset Classes", "SecA"} {
