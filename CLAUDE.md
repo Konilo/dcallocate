@@ -77,11 +77,12 @@ GitHub Actions workflow does the same on `v*` tag push.
 
 ## Known quirks
 
-- **~0.02 % money-column discrepancy vs PP's UI.** PP prefers the `<latest>`
-  element (sometimes intraday) over the last `<prices>/<price>` entry; we use
-  the latter. *Now %* and *Target %* match PP exactly; only the absolute
-  amounts drift marginally. This is intentional and documented — don't "fix"
-  it without asking the user.
+- **Price selection mirrors PP.** `latestPrice` in `internal/portfolio/parse.go`
+  reproduces PP's `Security.getSecurityPrice` rule: use `<latest>` when its
+  date is on-or-after the newest `<prices>/<price>` entry (with both ≤ today),
+  otherwise the newest `<price>`. This makes the *current* column match PP's
+  UI exactly, at the cost of intraday-reproducibility (re-running minutes
+  apart can yield different numbers, which is fine — see Out of scope).
 - **Devcontainer apt-get fix.** The Microsoft Go base image ships a Yarn
   apt source whose GPG key has rotated. `.devcontainer/Dockerfile` deletes
   `/etc/apt/sources.list.d/yarn.list` before `apt-get update`. If a future

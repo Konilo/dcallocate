@@ -230,3 +230,95 @@ func readFile(t *testing.T, path string) string {
 	}
 	return string(b)
 }
+
+func TestLatestPrice_PrefersLatestWhenOnOrAfterLastPrice(t *testing.T) {
+	today, _ := time.Parse("2006-01-02", "2026-05-23")
+	hist := priceXML{T: "2026-05-23", V: 6465146880000}   // 64651.4688
+	latest := priceXML{T: "2026-05-23", V: 6505221000000} // 65052.2100
+
+	cases := []struct {
+		name     string
+		security securityXML
+		wantV    float64
+		wantDate string
+	}{
+		{
+			name: "latest same date as last price -> latest wins (tie)",
+			security: securityXML{
+				Prices: pricesXML{Items: []priceXML{hist}},
+				Latest: &latest,
+			},
+			wantV:    65052.2100,
+			wantDate: "2026-05-23",
+		},
+		{
+			name: "latest newer than last price -> latest wins",
+			security: securityXML{
+				Prices: pricesXML{Items: []priceXML{{T: "2026-05-22", V: 6502844140000}}},
+				Latest: &latest,
+			},
+			wantV:    65052.2100,
+			wantDate: "2026-05-23",
+		},
+		{
+			name: "latest older than last price -> last price wins",
+			security: securityXML{
+				Prices: pricesXML{Items: []priceXML{hist}},
+				Latest: &priceXML{T: "2026-05-22", V: 6502844140000},
+			},
+			wantV:    64651.4688,
+			wantDate: "2026-05-23",
+		},
+		{
+			name: "no latest -> last price wins",
+			security: securityXML{
+				Prices: pricesXML{Items: []priceXML{hist}},
+			},
+			wantV:    64651.4688,
+			wantDate: "2026-05-23",
+		},
+		{
+			name: "no prices but latest present -> latest wins",
+			security: securityXML{
+				Latest: &latest,
+			},
+			wantV:    65052.2100,
+			wantDate: "2026-05-23",
+		},
+		{
+			name: "latest in the future -> ignored, fall back to last price",
+			security: securityXML{
+				Prices: pricesXML{Items: []priceXML{hist}},
+				Latest: &priceXML{T: "2026-05-24", V: 9999999999999},
+			},
+			wantV:    64651.4688,
+			wantDate: "2026-05-23",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			v, d, err := latestPrice(&c.security, today)
+			if err != nil {
+				t.Fatalf("latestPrice: %v", err)
+			}
+			if !almostEqual(v, c.wantV, 1e-4) {
+				t.Errorf("price = %.4f, want %.4f", v, c.wantV)
+			}
+			if got := d.Format("2006-01-02"); got != c.wantDate {
+				t.Errorf("date = %s, want %s", got, c.wantDate)
+			}
+		})
+	}
+}
+
+func TestLatestPrice_NoUsablePriceErrors(t *testing.T) {
+	today, _ := time.Parse("2006-01-02", "2026-05-23")
+	if _, _, err := latestPrice(&securityXML{}, today); err == nil {
+		t.Errorf("expected error for security with no prices and no latest")
+	}
+	if _, _, err := latestPrice(&securityXML{
+		Prices: pricesXML{Items: []priceXML{{T: "2026-05-24", V: 1}}},
+	}, today); err == nil {
+		t.Errorf("expected error when all prices are after today and no latest")
+	}
+}

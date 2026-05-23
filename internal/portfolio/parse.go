@@ -310,16 +310,15 @@ func buildNode(tn *taxonomyNodeXML, parentTarget float64,
 	return n, nil
 }
 
-// latestPrice returns (price-per-unit, date) for the most recent <price t v/>
-// with t <= today. Price is in the security's currency, which the caller has
-// already verified equals the portfolio base currency.
+// latestPrice returns (price-per-unit, date) for the most recent quote with
+// t <= today, mirroring PortfolioPerformance's Security.getSecurityPrice():
+// prefer <latest> when it is on-or-after the newest <prices>/<price> entry,
+// otherwise use that newest <price>. Price is in the security's currency,
+// which the caller has already verified equals the portfolio base currency.
 func latestPrice(s *securityXML, today time.Time) (float64, time.Time, error) {
-	if len(s.Prices.Items) == 0 {
-		return 0, time.Time{}, errors.New("no prices")
-	}
-	var best priceXML
-	var bestDate time.Time
-	found := false
+	var histV int64
+	var histDate time.Time
+	histFound := false
 	for _, p := range s.Prices.Items {
 		d, err := time.Parse("2006-01-02", p.T)
 		if err != nil {
@@ -328,16 +327,28 @@ func latestPrice(s *securityXML, today time.Time) (float64, time.Time, error) {
 		if d.After(today) {
 			continue
 		}
-		if !found || d.After(bestDate) {
-			best = p
-			bestDate = d
-			found = true
+		if !histFound || d.After(histDate) {
+			histV = p.V
+			histDate = d
+			histFound = true
 		}
 	}
-	if !found {
+
+	if s.Latest != nil {
+		if d, err := time.Parse("2006-01-02", s.Latest.T); err == nil && !d.After(today) {
+			if !histFound || !d.Before(histDate) {
+				return float64(s.Latest.V) / priceScale, d, nil
+			}
+		}
+	}
+
+	if !histFound {
+		if len(s.Prices.Items) == 0 {
+			return 0, time.Time{}, errors.New("no prices")
+		}
 		return 0, time.Time{}, errors.New("no price with t <= today")
 	}
-	return float64(best.V) / priceScale, bestDate, nil
+	return float64(histV) / priceScale, histDate, nil
 }
 
 func absFloat(x float64) float64 {
@@ -395,6 +406,7 @@ type securityXML struct {
 	Name         string    `xml:"name"`
 	CurrencyCode string    `xml:"currencyCode"`
 	Prices       pricesXML `xml:"prices"`
+	Latest       *priceXML `xml:"latest"`
 }
 
 type pricesXML struct {
