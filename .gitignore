@@ -17,5 +17,6 @@ coverage.out
 
 # Claude Code workspace settings (per-machine)
 /.claude/
+/.claude-memory/
 
 draft/
