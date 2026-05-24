@@ -66,7 +66,7 @@ Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %              
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
-The `—` in the `invest` column marks **stuck** taxonomy nodes that receive nothing because they are already at or over their target. (See [Water-filling mode](#water-filling-mode) for a worked walk-through of why `Cash` is stuck here despite being exactly at its target.)
+The `—` in the `invest` column marks **stuck** taxonomy nodes that receive nothing because they are already at or over their target. (Cf. the "[Water-filling mode](#water-filling-mode)" section for a worked walk-through of why `Cash` is stuck here despite being exactly at its target.)
 
 ### The 5/25 rule check
 
