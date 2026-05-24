@@ -66,7 +66,7 @@ Asset Classes           40000.00 EUR  100.00 %  100.00 %  100.00 %              
 Total contributed: +1000.00 EUR  (post-contribution portfolio: 41000.00 EUR)
 ```
 
-The `—` in the `invest` column marks **stuck** taxonomy nodes that receive nothing because they are already at or over their target. Note that, pre-contribution, `Cash` is exactly at its target percentage (5 % of 40000 € = 2000 €) yet still gets stuck. Once `Stocks` (the most-overweight leaf) is excluded, water-filling has to bring `Bonds` and `Cash` to a combined post-contribution value of 11000 € (their current 10000 € plus the 1000 € contribution), split proportionally to their renormalised target weights (25/30 for `Bonds`, 5/30 for `Cash`). Cash's renormalised target value is therefore $11000 \times 5/30 \approx 1833\text{ }€$, *below* its current 2000 €: reaching it would require selling about 167 € of `Cash`, which the no-selling rule forbids. So `Cash` is stuck too, and the full 1000 € ends up in `Bonds`. (Cf. the [Water-filling mode](#water-filling-mode) section for the precise statement of the algorithm.)
+The `—` in the `invest` column marks **stuck** taxonomy nodes that receive nothing because they are already at or over their target. (Cf. the "[Water-filling mode](#water-filling-mode)" section for a worked walk-through of why `Cash` is stuck here despite being exactly at its target.)
 
 ### The 5/25 rule check
 
@@ -190,6 +190,8 @@ Let $V = \sum_i c_i + C$ be the post-contribution portfolio total. At each pass,
 $$x_i = \frac{t_i}{\sum_{j \in \text{non-stuck}} t_j} \cdot \left(V - \sum_{k \in \text{stuck}} c_k\right) - c_i$$
 
 If any $x_i < 0$, mark those leaves as stuck (i.e., force $x_i := 0$) and repeat. Considering $N$ leaves, the algorithm terminates in at most $N$ passes: each non-terminal pass marks at least one leaf as stuck.
+
+Applied to the example in [Usage](#usage) (Stocks 30000 €/70 %, Bonds 8000 €/25 %, Cash 2000 €/5 %, contribution 1000 €): pre-contribution, `Cash` is exactly at its target percentage (5 % of 40000 € = 2000 €) yet still gets stuck. Once `Stocks` (the most-overweight leaf) is excluded, water-filling has to bring `Bonds` and `Cash` to a combined post-contribution value of 11000 € (their current 10000 € plus the 1000 € contribution), split proportionally to their renormalised target weights (25/30 for `Bonds`, 5/30 for `Cash`). Cash's renormalised target value is therefore $11000 \times 5/30 \approx 1833\text{ }€$, *below* its current 2000 €: reaching it would require selling about 167 € of `Cash`, which the no-selling rule forbids. So `Cash` is stuck too, and the full 1000 € ends up in `Bonds`.
 
 ### `--allow-selling` mode (closed-form)
 
