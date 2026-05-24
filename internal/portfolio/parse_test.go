@@ -322,3 +322,64 @@ func TestLatestPrice_NoUsablePriceErrors(t *testing.T) {
 		t.Errorf("expected error when all prices are after today and no latest")
 	}
 }
+
+func TestParse_XPathParity(t *testing.T) {
+	// The two fixtures encode the same portfolio in PP's two save formats.
+	// After parsing, every node and every leaf assignment must match exactly.
+	today, _ := time.Parse("2006-01-02", fixtureToday)
+	idFile, err := os.Open("../../testdata/portfolio_min.xml")
+	if err != nil {
+		t.Fatalf("open id fixture: %v", err)
+	}
+	t.Cleanup(func() { idFile.Close() })
+	xpathFile, err := os.Open("../../testdata/portfolio_min_xpath.xml")
+	if err != nil {
+		t.Fatalf("open xpath fixture: %v", err)
+	}
+	t.Cleanup(func() { xpathFile.Close() })
+
+	idTree, err := ParseReaderAt(idFile, "Asset Classes", today)
+	if err != nil {
+		t.Fatalf("parse id fixture: %v", err)
+	}
+	xpathTree, err := ParseReaderAt(xpathFile, "Asset Classes", today)
+	if err != nil {
+		t.Fatalf("parse xpath fixture: %v", err)
+	}
+
+	compareNodes(t, "", idTree, xpathTree)
+}
+
+// compareNodes walks two parsed trees in parallel and reports the first
+// structural or numeric divergence with a path. Tolerance on Current and
+// Target is the same we use elsewhere (1e-6 / 1e-9 respectively).
+func compareNodes(t *testing.T, path string, a, b *Node) {
+	t.Helper()
+	here := path + "/" + a.Name
+	if a.Name != b.Name {
+		t.Errorf("%s: name mismatch: id=%q xpath=%q", path, a.Name, b.Name)
+	}
+	if !almostEqual(a.Current, b.Current, 1e-6) {
+		t.Errorf("%s: Current mismatch: id=%g xpath=%g", here, a.Current, b.Current)
+	}
+	if !almostEqual(a.Target, b.Target, 1e-9) {
+		t.Errorf("%s: Target mismatch: id=%g xpath=%g", here, a.Target, b.Target)
+	}
+	if len(a.Children) != len(b.Children) {
+		t.Fatalf("%s: child count mismatch: id=%d xpath=%d", here, len(a.Children), len(b.Children))
+	}
+	for i := range a.Children {
+		compareNodes(t, here, a.Children[i], b.Children[i])
+	}
+	if len(a.Assignments) != len(b.Assignments) {
+		t.Fatalf("%s: assignment count mismatch: id=%d xpath=%d", here, len(a.Assignments), len(b.Assignments))
+	}
+	for i := range a.Assignments {
+		if a.Assignments[i].Name != b.Assignments[i].Name ||
+			a.Assignments[i].Kind != b.Assignments[i].Kind ||
+			!almostEqual(a.Assignments[i].Current, b.Assignments[i].Current, 1e-6) {
+			t.Errorf("%s: assignment[%d] mismatch: id=%+v xpath=%+v",
+				here, i, a.Assignments[i], b.Assignments[i])
+		}
+	}
+}

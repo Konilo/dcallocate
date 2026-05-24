@@ -162,7 +162,7 @@ sequenceDiagram
     opt --save-config
         main->>config: Save()
     end
-    main->>portfolio: Parse(xml, taxonomy) — read PP XML, build taxonomy tree
+    main->>portfolio: Parse(xml, taxonomy) — read PP XML (auto-handle id-ref or xpath-ref format), build taxonomy tree
     portfolio-->>main: tree (leaves carry Current, Target)
     main->>allocator: Allocate(leaves, amount)<br/>or AllocateWithSelling
     allocator-->>main: per-leaf Investment + Stuck
@@ -215,11 +215,6 @@ The parser maps PP's XML elements as follows:
 | `<assignment>` → `<investmentVehicle class="...">`   | Which security or account belongs to a taxonomy node.                                 |
 | `<portfolio-transaction>` (BUY / SELL / TRANSFER_*)  | Aggregated to compute current share count per security.                               |
 | `<account-transaction>` (DEPOSIT / DIVIDEND / ...)   | Aggregated to compute current cash balance per account.                               |
-
-The [parser](#how-it-works) handles two PP-specific quirks:
-
-1. **`id` / `reference` cross-linking**: PP's XStream serializer declares each object once with `id="N"` and refers to it elsewhere as `<element reference="N"/>`. The parser resolves these globally.
-2. **Fixed-point integers**: `<amount>` is stored × 100 (cents), `<shares>` and `<price v=>` × 1e8, `<weight>` × 10000. All conversions are managed by [internal/portfolio/parse.go](internal/portfolio/parse.go).
 
 ## Deliberate design choices & limitations
 

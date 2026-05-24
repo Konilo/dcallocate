@@ -63,6 +63,16 @@ func ParseReader(r io.Reader, taxonomyName string) (*Node, error) {
 // ParseReaderAt is ParseReader with an explicit "today" — used by tests to
 // pin the price-selection cutoff for reproducible results.
 func ParseReaderAt(r io.Reader, taxonomyName string, today time.Time) (*Node, error) {
+	f, r, err := detectFormat(r)
+	if err != nil {
+		return nil, err
+	}
+	if f == formatXPathRefs {
+		r, err = normalize(r)
+		if err != nil {
+			return nil, fmt.Errorf("normalize XPath references: %w", err)
+		}
+	}
 	var c clientXML
 	if err := xml.NewDecoder(r).Decode(&c); err != nil {
 		return nil, fmt.Errorf("decode XML: %w", err)
@@ -423,12 +433,12 @@ type accountsXML struct {
 }
 
 type accountXML struct {
-	ID           string         `xml:"id,attr"`
-	Reference    string         `xml:"reference,attr"`
-	UUID         string         `xml:"uuid"`
-	Name         string         `xml:"name"`
-	CurrencyCode string         `xml:"currencyCode"`
-	Transactions accountTxsXML  `xml:"transactions"`
+	ID           string        `xml:"id,attr"`
+	Reference    string        `xml:"reference,attr"`
+	UUID         string        `xml:"uuid"`
+	Name         string        `xml:"name"`
+	CurrencyCode string        `xml:"currencyCode"`
+	Transactions accountTxsXML `xml:"transactions"`
 }
 
 type accountTxsXML struct {
@@ -463,11 +473,11 @@ type crossEntryXML struct {
 }
 
 type portfolioXML struct {
-	ID           string             `xml:"id,attr"`
-	Reference    string             `xml:"reference,attr"`
-	UUID         string             `xml:"uuid"`
-	Name         string             `xml:"name"`
-	Transactions portfolioTxsXML    `xml:"transactions"`
+	ID           string          `xml:"id,attr"`
+	Reference    string          `xml:"reference,attr"`
+	UUID         string          `xml:"uuid"`
+	Name         string          `xml:"name"`
+	Transactions portfolioTxsXML `xml:"transactions"`
 }
 
 type portfolioTxsXML struct {
@@ -491,7 +501,7 @@ type taxonomiesXML struct {
 }
 
 type taxonomyXML struct {
-	Name string            `xml:"name"`
+	Name string          `xml:"name"`
 	Root taxonomyNodeXML `xml:"root"`
 }
 
