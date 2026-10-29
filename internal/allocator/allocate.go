@@ -31,6 +31,12 @@ import (
 // weights sum to 1.0.
 const WeightSumTolerance = 1e-4
 
+// roundingTolerance is the relative (to the post-contribution total) slack
+// under which a negative x_i is float noise, not a real shortfall. Without it,
+// a zero contribution can leave the last active asset at x ~ -1e-11 and stick
+// every asset.
+const roundingTolerance = 1e-9
+
 // Asset is one entry in the portfolio with its current value and target weight.
 type Asset struct {
 	Name    string
@@ -66,6 +72,7 @@ func Allocate(assets []Asset, amount float64) ([]Allocation, error) {
 	}
 
 	v := sumCurrent + amount
+	noise := roundingTolerance * v
 
 	// At most n+1 passes: each non-trivial pass sticks at least one asset.
 	for pass := 0; pass <= n; pass++ {
@@ -93,11 +100,14 @@ func Allocate(assets []Asset, amount float64) ([]Allocation, error) {
 			}
 			desired := (result[i].Target / sumActiveT) * deficit
 			x := desired - result[i].Current
-			if x < 0 {
+			switch {
+			case x < -noise:
 				result[i].Stuck = true
 				result[i].Amount = 0
 				anyNegative = true
-			} else {
+			case x < 0:
+				result[i].Amount = 0
+			default:
 				result[i].Amount = x
 			}
 		}

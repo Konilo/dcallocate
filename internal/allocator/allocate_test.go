@@ -150,6 +150,29 @@ func TestAllocate_ZeroAmountUnbalanced(t *testing.T) {
 	}
 }
 
+func TestAllocate_ZeroAmountRounding(t *testing.T) {
+	// With zero amount, the last non-stuck asset should receive exactly 0, but
+	// float rounding in V - sum_stuck(c) - c_i can land a hair below zero.
+	// That must not stick it too, or no asset is left.
+	assets := []Asset{
+		{Name: "A", Current: 95387.05, Target: 90.0 / 191},
+		{Name: "B", Current: 73628.88, Target: 100.0 / 191},
+		{Name: "C", Current: 26045.38, Target: 1.0 / 191},
+	}
+	got, err := Allocate(assets, 0)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+	for _, a := range got {
+		if a.Amount != 0 {
+			t.Errorf("%s should get exactly 0, got %g", a.Name, a.Amount)
+		}
+	}
+	if got[1].Stuck {
+		t.Errorf("B (under target) should not be stuck, got %+v", got[1])
+	}
+}
+
 func TestAllocate_TargetZero(t *testing.T) {
 	// Asset with target 0 and positive current value (e.g. a "do not grow" cash bucket)
 	// should always be stuck; full investment goes to the others.
